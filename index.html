@@ -962,6 +962,68 @@
 </head>
 <body>
 
+<!-- PANTALLA DE PASSWORD -->
+<div id="passwordScreen" style="
+  display:none;
+  position:fixed; inset:0; z-index:9999;
+  background:#0B2027;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:24px;
+  font-family:'Poppins',sans-serif;
+">
+  <svg width="90" height="90" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="100" cy="100" r="100" fill="#0B2027"/>
+    <circle cx="100" cy="100" r="91" fill="none" stroke="#F5F749" stroke-width="1.5"/>
+    <path d="M 135 58 A 55 55 0 1 0 135 142" fill="none" stroke="#40798C" stroke-width="3" stroke-linecap="round"/>
+  </svg>
+  <div style="color:#F6F5AE; font-size:1.1rem; font-weight:500; letter-spacing:0.04em;">Les millors receptes</div>
+  <div style="display:flex; flex-direction:column; align-items:center; gap:12px; width:220px;">
+    <input id="passwordInput" type="password" placeholder="Contrasenya"
+      style="
+        width:100%; padding:0.7rem 1rem; text-align:center;
+        background:#112830; border:1.5px solid #40798C;
+        border-radius:10px; color:#F6F5AE;
+        font-family:'Poppins',sans-serif; font-size:1.1rem;
+        outline:none; letter-spacing:0.2em;
+      "
+    />
+    <div id="passwordError" style="color:#E87A7A; font-size:0.8rem; min-height:1rem;"></div>
+    <button onclick="comprovarPassword()" style="
+      width:100%; padding:0.7rem;
+      background:#F5F749; color:#0B2027;
+      border:none; border-radius:10px;
+      font-family:'Poppins',sans-serif; font-size:0.95rem;
+      font-weight:600; cursor:pointer;
+    ">Entrar</button>
+  </div>
+</div>
+
+<script>
+  (function() {
+    if (localStorage.getItem('receptes_auth') !== '1') {
+      const screen = document.getElementById('passwordScreen');
+      screen.style.display = 'flex';
+      document.getElementById('passwordInput').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') comprovarPassword();
+      });
+    }
+  })();
+
+  function comprovarPassword() {
+    const val = document.getElementById('passwordInput').value;
+    if (val === '4030') {
+      localStorage.setItem('receptes_auth', '1');
+      document.getElementById('passwordScreen').style.display = 'none';
+    } else {
+      document.getElementById('passwordError').textContent = 'Contrasenya incorrecta';
+      document.getElementById('passwordInput').value = '';
+      document.getElementById('passwordInput').focus();
+    }
+  }
+</script>
+
 <!-- ══════════════════════════════════════
      PORTADA
 ══════════════════════════════════════ -->
