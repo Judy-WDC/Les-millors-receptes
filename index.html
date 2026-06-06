@@ -1,0 +1,2549 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quines receptes tinc?</title>
+
+<!-- PWA -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0B2027">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Les millors receptes">
+<link rel="apple-touch-icon" href="icon-192.png">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;1,9..144,300;1,9..144,400&family=Jost:wght@200;300;400&family=Poppins:wght@300;400;500&family=Syne:wght@300;400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<style>
+  /* ══════════════════════════════════════
+     VARIABLES & RESET
+  ══════════════════════════════════════ */
+  :root {
+    --bg:          #0B2027;
+    --surface:     #112830;
+    --surface2:    #162f38;
+    --border:      #40798C;
+    --border-dim:  #1e404d;
+    --text:        #F6F5AE;
+    --text-dim:    #D7BCC8;
+    --text-muted:  #7a9aa8;
+    --accent:      #F5F749;
+    --accent2:     #40798C;
+    --verd:        #3D6B4F;
+    --verd-clar:   #1a3d2a;
+    --error:       #8B2020;
+    --error-bg:    #2a0a0a;
+    --warn-bg:     #2a1f00;
+    --warn-border: #8B6000;
+    --warn-text:   #E8C87A;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Poppins', sans-serif;
+    min-height: 100vh;
+  }
+
+  /* ══════════════════════════════════════
+     NAVEGACIÓ / TABS
+  ══════════════════════════════════════ */
+  .bottom-nav {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    z-index: 100;
+    background: #0e2c36;
+    border-top: 1.5px solid #40798C;
+    display: none;
+    height: 64px;
+  }
+  .bottom-nav.visible { display: flex; }
+  .bottom-nav-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    padding-top: 6px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: var(--text-muted);
+    font-family: 'Poppins', sans-serif;
+    font-size: 0.72rem;
+    font-weight: 400;
+    letter-spacing: 0.02em;
+    transition: color 0.2s;
+  }
+  .bottom-nav-item i { font-size: 22px; }
+  .bottom-nav-item .nav-dot {
+    width: 4px; height: 4px;
+    border-radius: 50%;
+    background: transparent;
+    transition: background 0.2s;
+  }
+  .bottom-nav-item.actiu { color: var(--accent); }
+  .bottom-nav-item.actiu .nav-dot { background: var(--accent); }
+
+  /* ══════════════════════════════════════
+     PANELLS
+  ══════════════════════════════════════ */
+  html { scroll-padding-bottom: 140px; }
+  .panell {
+    display: none;
+    padding: 3rem 1.5rem 140px;
+  }
+  .panell.actiu { display: block; }
+
+  /* ══════════════════════════════════════
+     SHARED: HEADER
+  ══════════════════════════════════════ */
+  header {
+    text-align: center;
+    margin-bottom: 2.5rem;
+  }
+
+  header h1 {
+    font-family: 'Syne', sans-serif;
+    font-weight: 300;
+    font-size: clamp(2.2rem, 6vw, 3.5rem);
+    color: var(--accent);
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+  header h1 em { font-style: italic; color: var(--accent); }
+  header p { margin-top: 0.6rem; color: var(--text-muted); font-size: 0.9rem; font-weight: 300; }
+
+  /* ══════════════════════════════════════
+     PANELL CERCADOR
+  ══════════════════════════════════════ */
+  #panell-cerca .container { max-width: 680px; margin: 0 auto; }
+
+  .cerca-wrap {
+    position: relative;
+    margin-bottom: 1.25rem;
+  }
+  .cerca-wrap svg {
+    position: absolute; left: 14px; top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted); pointer-events: none;
+  }
+  .cerca-wrap input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 0.95rem;
+    background: var(--surface);
+    color: var(--text);
+    transition: border-color 0.2s;
+  }
+  .cerca-wrap input:focus { outline: none; border-color: var(--accent); }
+  .cerca-wrap input::placeholder { color: var(--text-muted); }
+  #cerca { padding-left: 2.75rem; padding-right: 3rem; }
+  .btn-clear-cerca {
+    position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+    background: none; border: none; cursor: pointer;
+    color: var(--text-muted); padding: 4px;
+    display: none; align-items: center; justify-content: center;
+    border-radius: 50%; transition: color 0.15s, background 0.15s;
+    line-height: 1;
+  }
+  .btn-clear-cerca:hover { color: var(--text); background: var(--surface2); }
+  .btn-clear-cerca.visible { display: flex; }
+
+  .cerca-row { display: flex; gap: 8px; align-items: center; margin-bottom: 1.25rem; }
+  .cerca-row .cerca-wrap { flex: 1; margin-bottom: 0; }
+
+  .btn-filtre-font {
+    width: 44px; height: 44px; flex-shrink: 0;
+    border-radius: 12px; border: 1.5px solid var(--border);
+    background: var(--surface); color: var(--text-muted);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: all 0.2s; font-size: 20px;
+  }
+  .btn-filtre-font:hover { border-color: var(--accent); color: var(--accent); background: rgba(245,247,73,0.05); }
+  .btn-filtre-font.actiu { border-color: var(--accent); color: var(--accent); background: rgba(245,247,73,0.08); }
+
+  .drawer-fonts {
+    display: grid; grid-template-rows: 0fr;
+    transition: grid-template-rows 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    margin-bottom: 0;
+  }
+  .drawer-fonts.obert { grid-template-rows: 1fr; margin-bottom: 1rem; }
+  .drawer-fonts-inner { overflow: hidden; }
+  .drawer-fonts-body {
+    background: var(--surface); border-radius: 12px;
+    border: 1px solid var(--border-dim);
+    padding: 0.9rem 1rem; margin-bottom: 0;
+  }
+  .drawer-fonts-label {
+    font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--text-muted); font-weight: 500; margin-bottom: 8px;
+  }
+  .fonts-grid { display: flex; flex-wrap: wrap; gap: 6px; }
+  .pill-font {
+    padding: 5px 13px; border-radius: 999px; font-size: 13px;
+    border: 1.5px solid var(--border-dim); background: transparent;
+    color: var(--text-dim); cursor: pointer;
+    transition: border-color 0.15s, color 0.15s, background 0.15s;
+    font-family: 'Poppins', sans-serif;
+  }
+  .pill-font:hover { border-color: var(--border); color: var(--text); }
+  .pill-font.actiu { border-color: var(--accent); color: var(--accent); background: rgba(245,247,73,0.06); }
+  .pill-font-clear {
+    padding: 5px 13px; border-radius: 999px; font-size: 13px;
+    border: 1.5px solid var(--border-dim); background: transparent;
+    color: var(--text-muted); cursor: pointer;
+    transition: all 0.15s; font-family: 'Poppins', sans-serif;
+  }
+  .pill-font-clear:hover { border-color: var(--border); color: var(--text-dim); }
+
+  /* Filtres */
+  .filtres {
+    display: flex; flex-wrap: wrap; gap: 8px;
+    margin-bottom: 1.75rem;
+  }
+  .filtre {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 12px 16px; font-size: 15px;
+    font-family: 'Poppins', sans-serif;
+    border-radius: 999px; border: 3px solid transparent;
+    background: var(--surface); color: var(--text-muted);
+    cursor: pointer;
+    transition: border-color 0.15s;
+  }
+  /* Colors per categoria via data-cat — sense JS inline */
+  .filtre[data-cat="Barretes"]             { background:#52050A; color:#F6F5AE; --filtre-hover-color:#8B0010; }
+  .filtre[data-cat="Boletes energètiques"] { background:#7A3018; color:#F6F5AE; --filtre-hover-color:#C8582A; }
+  .filtre[data-cat="Cremes"]               { background:#1E5E3A; color:#F6F5AE; --filtre-hover-color:#3DB870; }
+  .filtre[data-cat="Currys"]               { background:#5C3A1E; color:#F6F5AE; --filtre-hover-color:#C97D4A; }
+  .filtre[data-cat="Untables"]             { background:#FE7F2D; color:#0B2027; --filtre-hover-color:#C85A0A; }
+  .filtre[data-cat="Untables dolços"]      { background:#6B4A8A; color:#F6F5AE; --filtre-hover-color:#C09AE8; }
+  .filtre[data-cat="Altres"]               { background:#2A3A4A; color:#F6F5AE; --filtre-hover-color:#7A9AB0; }
+  .filtre[data-cat="totes"]                { --filtre-hover-color:#F5F749; }
+  /* Paleta per a categories noves — assignació automàtica per JS */
+  .filtre[data-cat-auto="0"] { background:#4A2060; color:#F6F5AE; --filtre-hover-color:#9B59D9; }
+  .filtre[data-cat-auto="1"] { background:#1A4A5C; color:#F6F5AE; --filtre-hover-color:#3BB8D9; }
+  .filtre[data-cat-auto="2"] { background:#5C2A40; color:#F6F5AE; --filtre-hover-color:#D45A80; }
+  .filtre[data-cat-auto="3"] { background:#2A4A20; color:#F6F5AE; --filtre-hover-color:#7AC43A; }
+  .filtre[data-cat-auto="4"] { background:#1A3A4A; color:#F6F5AE; --filtre-hover-color:#3B9E8C; }
+  .filtre[data-cat-auto="5"] { background:#7A3A6A; color:#F6F5AE; --filtre-hover-color:#D470B8; }
+  .filtre[data-cat-auto="6"] { background:#5C3010; color:#F6F5AE; --filtre-hover-color:#E8742A; }
+  .filtre[data-cat-auto="7"] { background:#1A2A5C; color:#F6F5AE; --filtre-hover-color:#3A5CBF; }
+  .filtre[data-cat-auto="8"] { background:#4A4A8A; color:#F6F5AE; --filtre-hover-color:#9A9AE8; }
+  .filtre[data-cat-auto="9"] { background:#2A4A1A; color:#F6F5AE; --filtre-hover-color:#6BBF3A; }
+  /* Hover i actiu — han d'anar DESPRÉS dels data-cat per guanyar en especificitat */
+  .filtre:not(.actiu):hover {
+    border-color: var(--filtre-hover-color, #F5F749);
+  }
+  /* Actiu genèric — per a "totes" i qualsevol filtre sense color propi */
+  .filtre.actiu {
+    background: var(--accent) !important; border-color: var(--accent) !important;
+    color: var(--bg) !important; font-weight: 500;
+  }
+  /* Actiu per a categories amb color propi — fixes i noves automàtiques */
+  .filtre[data-cat]:not([data-cat="totes"]).actiu,
+  .filtre[data-cat-auto].actiu {
+    background: var(--filtre-hover-color) !important;
+    border-color: rgba(255,255,255,0.7) !important;
+    color: inherit !important;
+    font-weight: 500;
+  }
+
+  @media (max-width: 600px) {
+    .filtre { padding: 6px 12px; font-size: 13px; }
+  }
+
+  .etiquetes-wrap {
+    display: flex; flex-wrap: wrap; gap: 6px;
+    margin-bottom: 1.25rem;
+  }
+  .filtre-etiqueta {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 5px 13px; font-size: 13px;
+    font-family: 'Poppins', sans-serif;
+    border-radius: 999px; border: 1.5px solid var(--border-dim);
+    background: transparent; color: var(--text-muted);
+    cursor: pointer; transition: border-color 0.15s, color 0.15s;
+  }
+  .filtre-etiqueta:hover { border-color: var(--text-dim); color: var(--text-dim); }
+  .filtre-etiqueta.actiu {
+    background: var(--accent2); border-color: var(--accent2);
+    color: var(--text); font-weight: 500;
+  }
+  @media (max-width: 600px) {
+    .filtre-etiqueta { padding: 4px 10px; font-size: 12px; }
+  }
+
+  /* Cards recepta */
+  .card {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    margin-bottom: 10px;
+    cursor: default;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .card:hover { border-color: var(--text-dim); box-shadow: 0 2px 12px rgba(0,0,0,0.2); }
+  .card-header {
+    display: flex; align-items: center;
+    justify-content: space-between; gap: 12px;
+    padding: 1rem 1.25rem;
+    cursor: pointer;
+  }
+  .card-nom { font-size: 15px; font-weight: 500; color: var(--text); }
+  .card-dreta { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+  .badge-cat {
+    font-size: 13px; padding: 3px 10px;
+    border-radius: 999px; font-weight: 500;
+  }
+  .card-arrow {
+    width: 18px; height: 18px;
+    color: var(--text-muted);
+    transition: transform 0.2s; flex-shrink: 0;
+  }
+  .card-arrow.obert { transform: rotate(180deg); }
+  .card-accordion {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .card-accordion.obert { grid-template-rows: 1fr; }
+  .card-accordion-inner { overflow: hidden; }
+  .card-body { padding: 20px 16px 16px; border-top: 0.5px solid var(--border-dim); }
+  .card-top-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+  .card-top-left { flex: 1; padding-top: 10px; }
+  .card-top-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  .card-stars { display: flex; gap: 2px; }
+  .card-star { font-size: 15px; color: var(--accent); line-height: 1; }
+  .card-star.off { color: var(--border-dim); }
+  .card-section { margin-top: 12px; }
+  .card-section-label {
+    font-size: 10px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.08em; color: var(--text-muted); margin-bottom: 6px;
+  }
+  .ingredients-label {
+    font-size: 10px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.08em; color: var(--text-muted); margin-bottom: 6px;
+  }
+  .ingredients-text { font-size: 13px; color: var(--text-dim); line-height: 1.7; margin: 0; }
+  .card-instruccions ol { margin: 0; padding-left: 18px; }
+  .card-instruccions li { font-size: 13px; color: var(--text-dim); line-height: 1.65; margin-bottom: 4px; }
+  .card-etiquetes { display: flex; flex-wrap: wrap; gap: 5px; }
+  .card-font {
+    margin-top: 10px; font-size: 12px; color: var(--text-muted);
+    display: flex; align-items: center; gap: 5px;
+  }
+
+  /* Estat buit */
+  .estat {
+    text-align: center; padding: 3rem 1rem;
+    color: var(--text-muted); font-size: 14px;
+  }
+  .estat svg { display: block; margin: 0 auto 12px; opacity: 0.4; }
+
+  /* Botó Sorprèn-me */
+  .btn-sorpren {
+    display: block; width: fit-content;
+    padding: 0.75rem 2rem; margin: 0 auto 1.75rem;
+    background: transparent; border: 1.5px solid var(--border);
+    border-radius: 12px; color: var(--text-dim);
+    font-family: 'Poppins', sans-serif;
+    font-size: 0.9rem; font-weight: 400;
+    letter-spacing: 0.04em; cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-sorpren:hover {
+    border-color: var(--accent); color: var(--accent);
+    background: rgba(245,247,73,0.05);
+  }
+
+  /* Mode local/fora */
+  .selector-mode {
+    display: flex; justify-content: center;
+    gap: 10px; margin-top: 1.25rem;
+  }
+  .btn-mode {
+    padding: 0.45rem 1.1rem;
+    font-family: 'Poppins', sans-serif;
+    font-size: 0.82rem; font-weight: 400;
+    border-radius: 8px; border: 1.5px solid var(--border);
+    background: transparent; color: var(--text-muted);
+    cursor: pointer; transition: all 0.2s;
+  }
+  .btn-mode:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-mode.actiu {
+    background: var(--border); border-color: var(--border);
+    color: var(--text);
+  }
+
+  .missatge-fora {
+    display: none; margin: 1rem auto 0;
+    max-width: 480px; background: var(--error-bg);
+    border: 1.5px solid var(--error);
+    border-radius: 12px; padding: 0.75rem 1.1rem;
+    font-size: 0.85rem; color: #E8A0A0;
+    text-align: center; line-height: 1.5;
+  }
+  .missatge-fora.visible { display: block; }
+
+  .comptador { font-size: 12px; color: var(--text-muted); margin-bottom: 1rem; }
+
+  .error-box {
+    background: var(--error-bg); border: 1.5px solid var(--text-dim);
+    border-radius: 12px; padding: 1rem 1.25rem;
+    font-size: 13px; color: var(--text-dim);
+    display: none; margin-bottom: 1.5rem;
+  }
+  .error-box strong { display: block; margin-bottom: 4px; }
+  .error-box code {
+    background: rgba(0,0,0,0.2); padding: 2px 6px;
+    border-radius: 4px; font-size: 12px;
+  }
+
+  /* ══════════════════════════════════════
+     PANELL ESCÀNER
+  ══════════════════════════════════════ */
+  #panell-scan .contenidor { max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: 1.5rem; }
+
+  /* Avís servidor */
+  /* Formulari manual */
+  .form-manual-wrap {
+    display: grid; grid-template-rows: 0fr;
+    transition: grid-template-rows 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .form-manual-wrap.obert { grid-template-rows: 1fr; }
+  .form-manual-inner { overflow: hidden; }
+
+  #avis-servidor {
+    max-width: 720px; margin: 0 auto 1.25rem;
+    background: var(--warn-bg);
+    border: 1.5px solid var(--warn-border);
+    border-radius: 12px; padding: 0.9rem 1.2rem;
+    font-size: 0.85rem; color: var(--warn-text);
+    display: none; align-items: center; gap: 0.6rem;
+  }
+  #avis-servidor.visible { display: flex; }
+
+  /* Config box */
+
+  label {
+    font-size: 0.75rem; color: var(--text-muted);
+    display: block; margin-bottom: 0.3rem;
+    font-weight: 500; text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  input[type=text], select {
+    width: 100%; padding: 0.6rem 0.9rem;
+    border: 1.5px solid var(--border-dim);
+    border-radius: 8px; font-family: 'Poppins', sans-serif;
+    font-size: 0.9rem; background: var(--bg);
+    color: var(--text); transition: border-color 0.2s; appearance: none;
+  }
+  input[type=text]:focus, select:focus {
+    outline: none; border-color: var(--accent);
+  }
+  input[type=text]::placeholder { color: var(--text-muted); }
+  .select-wrap { position: relative; }
+  .cat-nova-wrap { display: flex; flex-direction: column; gap: 6px; }
+  .cat-nova-input {
+    display: none;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: 'Poppins', sans-serif;
+    font-size: 0.85rem;
+    padding: 7px 12px;
+    outline: none;
+    width: 100%;
+  }
+  .cat-nova-input::placeholder { color: var(--text-muted); }
+  .cat-nova-input:focus { border-color: var(--accent); }
+  .select-wrap::after {
+    content: '▾'; position: absolute;
+    right: 0.9rem; top: 50%; transform: translateY(-50%);
+    color: var(--text-muted); pointer-events: none; font-size: 0.8rem;
+  }
+
+  /* Capçalera de secció */
+  .col-header {
+    background: var(--surface); border-radius: 14px 14px 0 0;
+    padding: 1rem 1.5rem 0.85rem;
+    border-bottom: 1.5px solid var(--border-dim);
+  }
+  .col-header h3 {
+    font-family: 'Poppins', sans-serif; font-weight: 500;
+    font-size: 1rem; color: var(--text-dim);
+    display: flex; align-items: center; gap: 0.5rem;
+  }
+  .col-header p { font-size: 0.78rem; color: var(--text-muted); margin-top: 0.2rem; }
+  .seccio { display: flex; flex-direction: column; gap: 0; }
+  .col-body {
+    background: var(--surface); border-radius: 0 0 14px 14px;
+    padding: 1.25rem 1.25rem 1.5rem;
+    border: 1px solid var(--border-dim); border-top: none;
+    display: flex; flex-direction: column; gap: 1.25rem;
+  }
+
+  /* Drop zone */
+  .drop-zone {
+    border: 2.5px dashed var(--border);
+    border-radius: 14px; padding: 2.5rem 1.5rem;
+    text-align: center; cursor: pointer;
+    transition: all 0.25s; background: var(--bg);
+    position: relative;
+  }
+  .drop-zone:hover, .drop-zone.drag-over {
+    border-color: var(--accent); background: var(--surface2);
+  }
+  .drop-zone .icon { font-size: 2.4rem; margin-bottom: 0.7rem; display: block; }
+  .drop-zone p { color: var(--text-muted); font-size: 0.85rem; line-height: 1.5; }
+  .drop-zone strong { color: var(--accent2); font-weight: 500; }
+  .drop-zone .tipus-acceptats {
+    display: flex; justify-content: center;
+    gap: 0.5rem; margin-top: 0.75rem; flex-wrap: wrap;
+  }
+  .chip {
+    background: var(--surface2); border: 1px solid var(--border-dim);
+    border-radius: 20px; padding: 0.2rem 0.65rem;
+    font-size: 0.72rem; color: var(--text-muted); font-weight: 500;
+  }
+
+  /* Cua */
+  .cua { display: flex; flex-direction: column; gap: 0.85rem; }
+
+  /* Targeta ítem */
+  .targeta {
+    background: var(--bg); border-radius: 12px;
+    overflow: hidden; border: 1px solid var(--border-dim);
+  }
+  .targeta-top {
+    display: grid; grid-template-columns: 70px 1fr auto;
+    align-items: center; gap: 0;
+  }
+  .targeta-preview {
+    width: 70px; height: 70px;
+    object-fit: cover; display: block; flex-shrink: 0;
+  }
+  .targeta-icona {
+    width: 70px; height: 70px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 2rem; flex-shrink: 0; background: var(--surface);
+  }
+  .targeta-info {
+    padding: 0.7rem 0.85rem; display: flex;
+    flex-direction: column; justify-content: center; gap: 0.2rem;
+  }
+  .targeta-nom { font-weight: 500; font-size: 0.85rem; color: var(--text); }
+  .targeta-estat { font-size: 0.75rem; color: var(--text-muted); }
+
+  /* Formulari revisió */
+  .targeta-form {
+    padding: 0.85rem 1rem 1rem;
+    border-top: 1px solid var(--border-dim);
+    display: none; flex-direction: column; gap: 0.75rem;
+    background: var(--surface);
+  }
+  .targeta-form.visible { display: flex; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+  .form-group { display: flex; flex-direction: column; gap: 0.25rem; }
+  .form-group.full { grid-column: 1/-1; }
+  .form-group input[type=text], .form-group select {
+    font-size: 0.82rem; padding: 0.5rem 0.8rem;
+  }
+  textarea {
+    width: 100%; padding: 0.5rem 0.8rem;
+    border: 1.5px solid var(--border-dim);
+    border-radius: 8px; font-family: 'Poppins', sans-serif;
+    font-size: 0.82rem; background: var(--bg);
+    color: var(--text); resize: vertical; min-height: 72px;
+    transition: border-color 0.2s;
+  }
+  textarea:focus { outline: none; border-color: var(--accent); }
+  textarea::placeholder { color: var(--text-muted); }
+
+  /* Badges escàner */
+  .badge {
+    display: inline-flex; align-items: center; gap: 0.3rem;
+    padding: 0.22rem 0.6rem; border-radius: 20px;
+    font-size: 0.7rem; font-weight: 500; white-space: nowrap; flex-shrink: 0;
+  }
+  .badge.pendent    { background: #332000; color: #E8A060; }
+  .badge.processant { background: var(--verd-clar); color: #6fcf97; animation: pulse 1.2s infinite; }
+  .badge.fet        { background: #0a2a10; color: #6fcf97; }
+  .badge.desat      { background: #0a2a10; color: #4caf50; }
+  .badge.error      { background: var(--error-bg); color: #E89090; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+
+  /* Botons targeta */
+  .targeta-accions {
+    display: flex; align-items: center; gap: 0.4rem;
+    margin-right: 0.75rem; flex-shrink: 0;
+  }
+  .btn-eliminar {
+    padding: 0.32rem 0.7rem; background: transparent;
+    color: #E89090; border: 1.5px solid #8B3030;
+    border-radius: 8px; font-family: 'Poppins', sans-serif;
+    font-size: 0.7rem; font-weight: 500; cursor: pointer;
+    white-space: nowrap; transition: background 0.2s, color 0.2s;
+  }
+  .btn-eliminar:hover { background: #8B3030; color: white; }
+
+  /* Botó desar */
+  .btn-desar {
+    align-self: flex-end; padding: 0.5rem 1.2rem;
+    background: var(--verd); color: white; border: none;
+    border-radius: 8px; font-family: 'Poppins', sans-serif;
+    font-size: 0.82rem; font-weight: 500; cursor: pointer;
+    transition: background 0.2s, transform 0.15s;
+  }
+  .btn-desar:hover { background: #2D5A3F; transform: translateY(-1px); }
+  .btn-desar:disabled { background: #1e3a28; color: #4a7a5a; cursor: not-allowed; transform: none; }
+
+  /* Botons acció principal */
+  .accions { display: flex; gap: 0.75rem; }
+  .btn-primary {
+    flex: 1; padding: 0.8rem 1.2rem; border: none;
+    border-radius: 10px; font-family: 'Poppins', sans-serif;
+    font-size: 0.9rem; font-weight: 500; cursor: pointer;
+    transition: all 0.2s; background: var(--verd); color: white;
+  }
+  .btn-primary:hover { background: #2D5A3F; transform: translateY(-1px); }
+  .btn-primary:disabled { background: #1e3a28; color: #4a7a5a; cursor: not-allowed; transform: none; }
+  .btn-secondary {
+    flex: 1; padding: 0.8rem 1.2rem;
+    border: 1.5px solid var(--border);
+    border-radius: 10px; font-family: 'Poppins', sans-serif;
+    font-size: 0.9rem; font-weight: 500; cursor: pointer;
+    transition: all 0.2s; background: transparent; color: var(--text-dim);
+  }
+  .btn-secondary:hover { background: var(--surface2); }
+  .btn-secondary:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* Botó editar (llapis) */
+  .btn-editar {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    transition: color 0.2s, background 0.15s;
+    flex-shrink: 0;
+  }
+  .btn-editar:hover { color: var(--accent); background: rgba(245,247,73,0.08); }
+
+  /* Formulari d'edició inline a la card */
+  .card-edit-form {
+    display: none;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding-top: 14px;
+    border-top: 1px solid var(--border-dim);
+    margin-top: 12px;
+  }
+  .card-edit-form.visible { display: flex; }
+  .card-edit-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+  .card-edit-group { display: flex; flex-direction: column; gap: 0.25rem; }
+  .card-edit-group.full { grid-column: 1/-1; }
+  .card-edit-label {
+    font-size: 0.7rem; text-transform: uppercase;
+    letter-spacing: 0.07em; color: var(--text-muted);
+    font-weight: 500;
+  }
+  .card-edit-group input[type=text],
+  .card-edit-group select,
+  .card-edit-group textarea {
+    font-size: 0.82rem; padding: 0.45rem 0.75rem;
+    border: 1.5px solid var(--border-dim);
+    border-radius: 8px; font-family: 'Poppins', sans-serif;
+    background: var(--bg); color: var(--text);
+    transition: border-color 0.2s; width: 100%;
+  }
+  .card-edit-group input[type=text]:focus,
+  .card-edit-group select:focus,
+  .card-edit-group textarea:focus {
+    outline: none; border-color: var(--accent);
+  }
+  .card-edit-group textarea { resize: vertical; min-height: 68px; }
+  .card-edit-accions {
+    display: flex; gap: 0.6rem; justify-content: flex-end; align-items: center;
+  }
+  .btn-edit-cancel {
+    padding: 0.4rem 1rem;
+    background: transparent; border: 1.5px solid var(--border-dim);
+    border-radius: 8px; font-family: 'Poppins', sans-serif;
+    font-size: 0.8rem; color: var(--text-muted); cursor: pointer;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  .btn-edit-cancel:hover { border-color: var(--border); color: var(--text-dim); }
+  .btn-edit-desar {
+    padding: 0.4rem 1.1rem;
+    background: var(--verd); border: none;
+    border-radius: 8px; font-family: 'Poppins', sans-serif;
+    font-size: 0.8rem; font-weight: 500; color: white; cursor: pointer;
+    transition: background 0.2s;
+  }
+  .btn-edit-desar:hover { background: #2D5A3F; }
+  .btn-edit-desar:disabled { background: #1e3a28; color: #4a7a5a; cursor: not-allowed; }
+
+  .btn-edit-eliminar {
+    background: transparent;
+    border: 1.5px solid var(--error);
+    border-radius: 8px;
+    padding: 0.38rem 0.9rem;
+    font-family: 'Poppins', sans-serif;
+    font-size: 0.78rem;
+    color: #E89090;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+  }
+  .btn-edit-eliminar:hover { background: var(--error); color: white; }
+
+  @media (max-width: 600px) {
+    .card-edit-row { grid-template-columns: 1fr; }
+  }
+
+  /* Toast */
+  #toast {
+    position: fixed; bottom: 2rem; left: 50%;
+    transform: translateX(-50%) translateY(4rem);
+    background: var(--surface); color: var(--text);
+    border: 1px solid var(--border);
+    padding: 0.75rem 1.4rem; border-radius: 10px;
+    font-size: 0.88rem; font-weight: 400; opacity: 0;
+    transition: all 0.35s cubic-bezier(.2,.8,.4,1);
+    pointer-events: none; z-index: 999; white-space: nowrap;
+  }
+  #toast.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* ══════════════════════════════════════
+     RESPONSIVE
+  ══════════════════════════════════════ */
+  @media (max-width: 600px) {
+    .panell { padding: 2rem 1rem 7rem; }
+    .form-row { grid-template-columns: 1fr; }
+    .targeta-top { grid-template-columns: 56px 1fr auto; }
+    .targeta-preview, .targeta-icona { width: 56px; height: 56px; }
+    .nav-tab { padding: 0.85rem 1rem; font-size: 0.78rem; }
+  }
+
+  /* ══════════════════════════════════════
+     PANELL SCAN — TEMA CLAR
+  ══════════════════════════════════════ */
+  #panell-scan {
+    --bg:          #F0ECF7;
+    --surface:     #ffffff;
+    --surface2:    #D4E6DA;
+    --border:      #C8BFB4;
+    --border-dim:  #E8E2DA;
+    --text:        #1A1612;
+    --text-dim:    #6B4E3D;
+    --text-muted:  #9A9088;
+    --accent:      #C1714F;
+    --accent2:     #C1714F;
+    --verd:        #3D6B4F;
+    --verd-clar:   #D4E6DA;
+    --error:       #C62828;
+    --error-bg:    #FFEBEE;
+    --warn-bg:     #FFF3E0;
+    --warn-border: #FFCC80;
+    --warn-text:   #7B4F00;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', 'Poppins', sans-serif;
+  }
+
+  #panell-scan .col-header h3 { font-family: 'Poppins', sans-serif; }
+  #panell-scan .badge.pendent    { background: #FFF3E0; color: #E65100; }
+  #panell-scan .badge.processant { background: #D4E6DA; color: #3D6B4F; }
+  #panell-scan .badge.fet        { background: #E8F5E9; color: #2E7D32; }
+  #panell-scan .badge.desat      { background: #E8F5E9; color: #1B5E20; }
+  #panell-scan .badge.error      { background: #FFEBEE; color: #C62828; }
+
+  #panell-scan .btn-eliminar {
+    color: #C1714F; border-color: #C1714F;
+  }
+  #panell-scan .btn-eliminar:hover { background: #C1714F; color: white; }
+
+  #panell-scan .btn-desar:disabled { background: #B0C4B8; color: white; }
+  #panell-scan .btn-primary:disabled { background: #B0C4B8; color: white; }
+
+  #panell-scan .btn-secondary {
+    color: #C1714F; border-color: #C1714F; background: white;
+  }
+  #panell-scan .btn-secondary:hover { background: #FFF0EB; }
+
+  #panell-scan #toast {
+    background: #1A1612; color: #ffffff; border: none;
+  }
+
+  #panell-scan .col-body { box-shadow: 0 2px 16px rgba(0,0,0,0.06); border: none; border-top: none; }
+  #panell-scan .targeta { box-shadow: 0 1px 8px rgba(0,0,0,0.05); border-color: #EDE8E2; }
+  #panell-scan .chip { background: #ffffff; border-color: #E0D8F0; }
+
+  /* ══════════════════════════════════════
+     PORTADA
+  ══════════════════════════════════════ */
+  #panell-portada {
+    --p-bg:     #F5F0E8;
+    --p-negre:  #1C1810;
+    --p-accent: #C1714F;
+    --p-gris:   #9A9080;
+    --p-blanc:  #FDFAF5;
+    background: var(--p-bg);
+    color: var(--p-negre);
+    font-family: 'Jost', sans-serif;
+    min-height: 100vh;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    position: relative;
+    overflow: hidden;
+  }
+  #panell-portada.actiu { display: flex; }
+
+  #panell-portada::before {
+    content: '';
+    position: absolute;
+    top: -30%; right: -15%;
+    width: 600px; height: 600px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(193,113,79,0.08) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  #panell-portada::after {
+    content: '';
+    position: absolute;
+    bottom: -20%; left: -10%;
+    width: 500px; height: 500px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(193,113,79,0.06) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .portada-linia-top {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, #C1714F, transparent);
+    opacity: 0.6;
+  }
+  .portada-container {
+    text-align: center;
+    max-width: 560px;
+    animation: fadeUp 0.9s ease both;
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .portada-ornament {
+    font-size: 1.4rem;
+    color: #C1714F;
+    opacity: 0.7;
+    margin-bottom: 1.5rem;
+    letter-spacing: 0.3em;
+    display: block;
+  }
+  .portada-h1 {
+    font-family: 'Syne', sans-serif;
+    font-weight: 300;
+    font-size: clamp(3rem, 10vw, 5.5rem);
+    line-height: 1.05;
+    color: #1C1810;
+    letter-spacing: -0.02em;
+    margin-bottom: 0.2em;
+  }
+  .portada-h1 em { font-style: normal; color: #C1714F; }
+  .portada-subtitol {
+    font-family: 'Jost', sans-serif;
+    font-weight: 200;
+    font-size: 1rem;
+    color: #9A9080;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 3.5rem;
+    margin-top: 0.75rem;
+  }
+  .portada-divisor {
+    width: 40px; height: 1px;
+    background: #C1714F;
+    margin: 0 auto 3.5rem;
+    opacity: 0.5;
+  }
+  .portada-botons {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    align-items: center;
+    width: 100%;
+  }
+  @media (min-width: 640px) {
+    .portada-botons { flex-direction: row; justify-content: center; }
+  }
+  .portada-boto {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    width: 100%;
+    max-width: 240px;
+    min-height: 160px;
+    padding: 1.75rem;
+    background: #FDFAF5;
+    border: 3px solid rgba(28,24,16,0.12);
+    border-radius: 16px;
+    text-align: left;
+    color: #1C1810;
+    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+    font-family: 'Jost', sans-serif;
+  }
+  .portada-boto::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(135deg, rgba(193,113,79,0.06) 0%, transparent 60%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    border-radius: 16px;
+  }
+  .portada-boto:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 16px 40px rgba(193,113,79,0.15);
+    border-color: rgba(193,113,79,0.6);
+  }
+  .portada-boto:hover::after { opacity: 1; }
+  .portada-boto-titol {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.4rem;
+    font-weight: 400;
+    display: block;
+    margin-bottom: 0.4rem;
+    line-height: 1.2;
+    color: #1C1810;
+  }
+  .portada-boto-desc {
+    font-size: 0.8rem;
+    font-weight: 300;
+    color: #9A9080;
+    letter-spacing: 0.02em;
+    line-height: 1.5;
+    display: block;
+  }
+  .portada-footer {
+    position: absolute;
+    bottom: 2rem;
+    font-size: 0.72rem;
+    font-weight: 300;
+    color: #9A9080;
+    letter-spacing: 0.08em;
+    opacity: 0.6;
+  }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════
+     PORTADA
+══════════════════════════════════════ -->
+<div id="panell-portada" class="actiu">
+  <div class="portada-linia-top"></div>
+  <div class="portada-container">
+    <span class="portada-ornament">✦</span>
+    <h1 class="portada-h1">Quines receptes <em>tinc?</em></h1>
+    <p class="portada-subtitol">El meu receptari personal</p>
+    <div class="portada-divisor"></div>
+    <div class="portada-botons">
+      <button class="portada-boto" onclick="anarA('cerca')">
+        <div>
+          <span class="portada-boto-titol">Cercar receptes</span>
+          <span class="portada-boto-desc">Explora el teu receptari per categoria o ingredient</span>
+        </div>
+      </button>
+      <button class="portada-boto" onclick="anarA('scan')">
+        <div>
+          <span class="portada-boto-titol">Afegir receptes</span>
+          <span class="portada-boto-desc">Escaneja documents PDF o Word i exporta a Excel</span>
+        </div>
+      </button>
+    </div>
+  </div>
+  <footer class="portada-footer">receptari personal &nbsp;·&nbsp; 2025</footer>
+</div>
+
+<!-- ══════════════════════════════════════
+     NAVEGACIÓ
+══════════════════════════════════════ -->
+<!-- NAVEGACIÓ INFERIOR -->
+<nav class="bottom-nav" id="nav-principal">
+  <button class="bottom-nav-item actiu" id="nav-tab-cerca" onclick="canviarPanell('cerca', this)">
+    <i class="ti ti-book" aria-hidden="true"></i>
+    <span>Receptari</span>
+    <div class="nav-dot"></div>
+  </button>
+  <button class="bottom-nav-item" id="nav-tab-scan" onclick="canviarPanell('scan', this)">
+    <i class="ti ti-camera" aria-hidden="true"></i>
+    <span>Afegir</span>
+    <div class="nav-dot"></div>
+  </button>
+</nav>
+
+<!-- ══════════════════════════════════════
+     PANELL 1: CERCADOR
+══════════════════════════════════════ -->
+<div id="panell-cerca" class="panell actiu">
+  <header>
+    <h1>Què vols cuinar avui?</h1>
+    <p id="subtitol">Carregant...</p>
+
+    <div class="missatge-fora" id="missatge-fora">🌍 Mode fora de casa — les receptes es carreguen des de Google Sheets. Un segon que estem connectant...</div>
+  </header>
+
+  <div class="container">
+    <div class="error-box" id="errorBox"></div>
+
+    <div class="cerca-row">
+      <div class="cerca-wrap">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+        </svg>
+        <input type="text" id="cerca" placeholder="Cerca per nom o ingredient..." oninput="onCercaInput()" />
+        <button class="btn-clear-cerca" id="btnClearCerca" onclick="netejarCerca()" aria-label="Esborrar cerca">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <button class="btn-filtre-font" id="btnFiltreFonts" onclick="toggleDrawerFonts()" aria-label="Filtrar per font">
+        <i class="ti ti-adjustments-horizontal" aria-hidden="true"></i>
+      </button>
+    </div>
+    <div class="drawer-fonts" id="drawerFonts">
+      <div class="drawer-fonts-inner">
+        <div class="drawer-fonts-body">
+          <div class="drawer-fonts-label">Font / Llibre</div>
+          <div class="fonts-grid" id="fontsPills"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="filtres" id="filtres"></div>
+    <div class="etiquetes-wrap" id="filtres-etiquetes"></div>
+    <button class="btn-sorpren" onclick="sorprenMe()">✨ Sorprèn-me!</button>
+    <p class="comptador" id="comptador"></p>
+    <div id="llista"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     PANELL 2: ESCÀNER
+══════════════════════════════════════ -->
+<div id="panell-scan" class="panell">
+  <header>
+    <h1>Afegir receptes</h1>
+    <p>Puja fotografies, documents PDF o Word i desa-les directament al receptari</p>
+  </header>
+
+  <div class="contenidor">
+    <div class="seccio">
+      <div class="col-header" id="btnDocsToggle" onclick="toggleFormDocs()" style="cursor:pointer;user-select:none;display:flex;align-items:center;justify-content:space-between;border-radius:14px;transition:border-radius 0.35s">
+        <div>
+          <h3>Receptes des de documents o imatges</h3>
+          <p>Fotografies, documents PDF o Word.</p>
+        </div>
+        <svg id="docs-arrow" style="flex-shrink:0;color:var(--text-muted);transition:transform 0.3s;margin-left:12px" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+      </div>
+      <div class="form-manual-wrap" id="formDocsWrap">
+        <div class="form-manual-inner">
+          <div class="col-body" style="border-radius:0 0 14px 14px;border-top:none;margin-top:0">
+            <div class="form-row" style="margin-bottom:1.25rem;padding-bottom:1.25rem;border-bottom:1px solid var(--border-dim)">
+              <div class="form-group">
+                <label>Font / Llibre per defecte <span style="font-weight:300;color:var(--text-muted)">(opcional)</span></label>
+                <input type="text" id="fontDefecte" placeholder="p.ex. Pick Up Limes, la mama...">
+              </div>
+              <div class="form-group">
+                <label>Categoria per defecte <span style="font-weight:300;color:var(--text-muted)">(opcional)</span></label>
+                <div class="select-wrap">
+                  <select id="catDefecte">
+                    <option value="">— Sense categoria —</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            <div class="drop-zone" id="dropZone">
+              <span class="icon">📂</span>
+              <p><strong>Arrossega els fitxers aquí</strong> o fes clic per seleccionar-los</p>
+              <p style="margin-top:0.3rem;font-size:0.78rem;">Pots barrejar imatges i documents alhora</p>
+              <div class="tipus-acceptats">
+                <span class="chip">📷 JPG · PNG · WEBP</span>
+                <span class="chip">📕 PDF</span>
+                <span class="chip">📘 Word (.docx)</span>
+              </div>
+              <input type="file" id="fileInput"
+                accept="image/*,.pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                multiple style="display:none">
+            </div>
+
+            <div class="cua" id="cua"></div>
+
+            <div class="accions">
+              <button class="btn-primary" id="btnProcessar" disabled>✨ Processar receptes</button>
+              <button class="btn-secondary" id="btnExportar" disabled>⬇️ Exportar Excel</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="contenidor" style="margin-top:1.75rem">
+    <div class="seccio">
+      <div class="col-header" id="btnManualToggle" onclick="toggleFormManual()" style="cursor:pointer;user-select:none;display:flex;align-items:center;justify-content:space-between;border-radius:14px;transition:border-radius 0.35s">
+        <div>
+          <h3>Afegir recepta manualment</h3>
+          <p>Introdueix directament el nom, ingredients i instruccions</p>
+        </div>
+        <svg id="manual-arrow" style="flex-shrink:0;color:var(--text-muted);transition:transform 0.3s;margin-left:12px" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+      </div>
+    <div class="form-manual-wrap" id="formManualWrap">
+      <div class="form-manual-inner">
+        <div class="col-body" style="border-radius:0 0 14px 14px;border-top:none;margin-top:0">
+          <div class="form-row">
+            <div class="form-group full">
+              <label>Nom de la recepta *</label>
+              <input type="text" id="manual-nom" placeholder="p.ex. Hummus de remolatxa">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Categoria</label>
+              <div class="select-wrap cat-nova-wrap">
+                <select id="manual-cat" onchange="handleCatSelect(this)">
+                  <option value="">— Sense categoria —</option>
+                </select>
+                <input class="cat-nova-input" type="text" placeholder="Nom de la categoria nova…"
+                  onkeydown="if(event.key==='Enter'){confirmarNovaCat(this);event.preventDefault()}"
+                  onblur="confirmarNovaCat(this)">
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Font</label>
+              <input type="text" id="manual-font" placeholder="p.ex. Deliciously Ella">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group full">
+              <label>Ingredients</label>
+              <textarea id="manual-ing" placeholder="Un ingredient per línia"></textarea>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group full">
+              <label>Instruccions</label>
+              <textarea id="manual-instruccions" placeholder="Un pas per línia" style="min-height:100px"></textarea>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>URL</label>
+              <input type="text" id="manual-url" placeholder="https://...">
+            </div>
+            <div class="form-group">
+              <label>Etiquetes</label>
+              <input type="text" id="manual-etiquetes" placeholder="sopar ràpid, meal prep…">
+            </div>
+          </div>
+          <div id="manual-error" style="display:none;font-size:0.82rem;color:#E57373;margin-top:-0.25rem"></div>
+          <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:0.25rem">
+            <button class="btn-secondary" style="flex:0;padding:0.5rem 1.1rem;font-size:0.85rem" onclick="toggleFormManual()">Cancel·lar</button>
+            <button class="btn-desar" onclick="desarManual()">Desar al receptari →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    </div>
+  </div>
+
+  <div id="avis-servidor" style="margin-top:40px">
+    ⚠️ &nbsp;El servidor Python no està actiu (necessari per a les fotografies). Obre un terminal i executa: <strong>&nbsp;python servidor.py</strong>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════════
+// CONFIGURACIÓ GLOBAL
+// ══════════════════════════════════════════════
+
+// URLs — ajusta-les si canvien
+const API_LOCAL  = 'http://localhost:8765/api/receptes';
+const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbxugkDOsSCSvp7YVtHSKuPMzzdA0kTxOTYCWfUFH0bT6CNsgffK_GdCiEJZX_6P1Vx2GQ/exec';
+const API_PYTHON = 'http://localhost:5000';
+
+// Categories — font única de veritat; afegir aquí per reflectir-ho a tot arreu
+const CAT_OPCIONS = ['Untables', 'Untables dolços', 'Cremes', 'Currys', 'Barretes', 'Boletes energètiques', 'Altres'];
+
+// Omple el selector de categoria per defecte del panell de scan
+document.addEventListener('DOMContentLoaded', () => {
+  const sel = document.getElementById('catDefecte');
+  CAT_OPCIONS.forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c; opt.textContent = c;
+    sel.appendChild(opt);
+  });
+});
+
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+  'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+// ══════════════════════════════════════════════
+// NAVEGACIÓ ENTRE PANELLS
+// ══════════════════════════════════════════════
+
+function anarA(id) {
+  document.getElementById('panell-portada').classList.remove('actiu');
+  document.getElementById('nav-principal').classList.add('visible');
+  const tab = document.getElementById('nav-tab-' + id);
+  canviarPanell(id, tab);
+  history.pushState({ panell: id }, '', '');
+}
+
+function tornarInici() {
+  document.querySelectorAll('.panell').forEach(p => p.classList.remove('actiu'));
+  document.querySelectorAll('.bottom-nav-item').forEach(t => t.classList.remove('actiu'));
+  document.getElementById('nav-principal').classList.remove('visible');
+  document.getElementById('panell-portada').classList.add('actiu');
+}
+
+function canviarPanell(id, btn) {
+  document.querySelectorAll('.panell').forEach(p => p.classList.remove('actiu'));
+  document.querySelectorAll('.bottom-nav-item').forEach(t => t.classList.remove('actiu'));
+  document.getElementById('panell-' + id).classList.add('actiu');
+  if (btn) btn.classList.add('actiu');
+  // Només fem pushState si no som a la portada i la crida no ve de popstate
+  if (!_navegantEnrere) history.pushState({ panell: id }, '', '');
+}
+
+// Inicialitzem l'estat base (portada) a l'historial
+let _navegantEnrere = false;
+history.replaceState({ panell: 'portada' }, '', '');
+
+window.addEventListener('popstate', function(e) {
+  _navegantEnrere = true;
+  const estat = e.state;
+  if (!estat || estat.panell === 'portada') {
+    tornarInici();
+  } else {
+    const tab = document.getElementById('nav-tab-' + estat.panell);
+    document.getElementById('panell-portada').classList.remove('actiu');
+    document.getElementById('nav-principal').classList.add('visible');
+    canviarPanell(estat.panell, tab);
+  }
+  _navegantEnrere = false;
+});
+
+// ══════════════════════════════════════════════
+// UTILITATS COMPARTIDES
+// ══════════════════════════════════════════════
+
+function mostrarToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('visible');
+  setTimeout(() => t.classList.remove('visible'), 3000);
+}
+
+// ══════════════════════════════════════════════
+// CERCADOR — lògica
+// ══════════════════════════════════════════════
+
+let mode = 'fora';
+let receptes = [];
+let catActiva = 'totes';
+let etiquetaActiva = new Set();
+let oberts = new Set();
+let carregant = false; // guard per evitar crides simultànies
+
+function canviarMode(nouMode) {
+  mode = nouMode;
+  document.getElementById('btn-local').classList.toggle('actiu', mode === 'local');
+  document.getElementById('btn-fora').classList.toggle('actiu', mode === 'fora');
+  document.getElementById('missatge-fora').classList.toggle('visible', mode === 'fora');
+  receptes = []; oberts.clear(); catActiva = 'totes';
+  document.getElementById('cerca').value = '';
+  document.getElementById('filtres').innerHTML = '';
+  document.getElementById('comptador').textContent = '';
+  document.getElementById('llista').innerHTML = '';
+  document.getElementById('subtitol').textContent = 'Carregant...';
+  carregar();
+}
+
+const CAT_COLORS = {
+  'Barretes':             { bg:'#52050A', color:'#F6F5AE' },
+  'Boletes energètiques': { bg:'#7A3018', color:'#F6F5AE' },
+  'Cremes':               { bg:'#1E5E3A', color:'#F6F5AE' },
+  'Currys':               { bg:'#5C3A1E', color:'#F6F5AE' },
+  'Untables':             { bg:'#FE7F2D', color:'#0B2027' },
+  'Untables dolços':      { bg:'#6B4A8A', color:'#F6F5AE' },
+  'Altres':               { bg:'#2A3A4A', color:'#F6F5AE' },
+};
+const CAT_AUTO_COLORS = [
+  { bg:'#4A2060', color:'#F6F5AE' },
+  { bg:'#1A4A5C', color:'#F6F5AE' },
+  { bg:'#5C2A40', color:'#F6F5AE' },
+  { bg:'#2A4A20', color:'#F6F5AE' },
+  { bg:'#1A3A4A', color:'#F6F5AE' },
+  { bg:'#7A3A6A', color:'#F6F5AE' },
+  { bg:'#5C3010', color:'#F6F5AE' },
+  { bg:'#1A2A5C', color:'#F6F5AE' },
+  { bg:'#4A4A8A', color:'#F6F5AE' },
+  { bg:'#2A4A1A', color:'#F6F5AE' },
+];
+
+function badgeStyle(cat) {
+  if (CAT_COLORS[cat]) {
+    const c = CAT_COLORS[cat];
+    return `background:${c.bg};color:${c.color}`;
+  }
+  // Categories noves — usa el mateix índex que el data-cat-auto del CSS
+  if (catAutoIdx[cat] !== undefined) {
+    const c = CAT_AUTO_COLORS[catAutoIdx[cat]];
+    return `background:${c.bg};color:${c.color}`;
+  }
+  return 'background:#2A3A4A;color:#F6F5AE';
+}
+
+function icona(cat) {
+  const mapa = {
+    'Barretes': '🍫', 'Boletes energètiques': '⚡',
+    'Cremes': '🥣', 'Currys': '🍛', 'Untables': '🥕', 'Untables dolços': '🍯',
+    'Altres': '🫙',
+  };
+  return mapa[cat] || '🍽️';
+}
+
+function hoverColor(cat) {
+  const mapa = {
+    'Barretes': '#8B0010', 'Boletes energètiques': '#A85A3A',
+    'Cremes': '#52C49A', 'Currys': '#C97D4A', 'Untables': '#FFD580', 'Untables dolços': '#D4C8E2',
+    'Altres': '#7A9AB0',
+  };
+  return mapa[cat] || '#F5F749';
+}
+
+async function carregar() {
+  if (carregant) return; // evita crides simultànies que penjarien el navegador
+  carregant = true;
+  try {
+    let data;
+    const timeout = AbortSignal.timeout(8000); // màxim 8s; si el servidor no respon, llança error
+    if (mode === 'local') {
+      const r = await fetch(API_LOCAL, { signal: timeout });
+      if (!r.ok) throw new Error('Error servidor');
+      data = await r.json();
+    } else {
+      // Llegim via Apps Script (evita el bloqueig CORS de la URL CSV directa)
+      const r = await fetch(`${SHEETS_URL}`, { signal: timeout });
+      if (!r.ok) throw new Error('Error Sheets: ' + r.status);
+      data = await r.json();
+    }
+    // El Sheets retorna { receptes, categoriesExtra }; mode local retorna array directe
+    if (Array.isArray(data)) {
+      receptes = data;
+    } else {
+      receptes = data.receptes || [];
+      const extra = data.categoriesExtra || [];
+      extra.forEach(nom => {
+        if (!CAT_OPCIONS.includes(nom)) CAT_OPCIONS.push(nom);
+      });
+    }
+    document.getElementById('errorBox').style.display = 'none';
+    document.getElementById('missatge-fora').classList.remove('visible');
+    document.getElementById('subtitol').textContent =
+      `Actualment hi ha ${receptes.length} receptes al teu receptari`;
+    construirFiltres();
+    aplicar();
+  } catch (e) {
+    const errorBox = document.getElementById('errorBox');
+    errorBox.style.display = 'block';
+    if (mode === 'local') {
+      errorBox.innerHTML = '<strong>No es pot connectar al servidor local</strong>Assegura\'t que el servidor està en marxa: <code>python servidor.py</code> — o canvia a mode <em>Estic fora de casa</em> per carregar des de Google Sheets.';
+    } else {
+      errorBox.innerHTML = '<strong>No s\'han pogut carregar les receptes</strong>Comprova que tens connexió a internet i que el Google Sheet és accessible.';
+    }
+    document.getElementById('subtitol').textContent = 'Error de connexió';
+  } finally {
+    carregant = false; // allibera el guard sempre
+  }
+}
+
+const CATS_FIXES = new Set(['totes','Barretes','Boletes energètiques','Cremes','Currys','Untables','Untables dolços','Altres']);
+const catAutoIdx = {}; // mapa cat → índex auto, sincronitzat amb construirFiltres
+let receptaSorpresa = null; // nom de la recepta en mode sorpresa
+let fontActiva = null; // font seleccionada al drawer de fonts
+
+function construirFiltres() {
+  const cats = ['totes', ...new Set(receptes.map(r => r['Categoria']).filter(Boolean))];
+  const cont = document.getElementById('filtres');
+  let autoIdx = 0;
+  // Neteja i reconstrueix el mapa d'índexs auto
+  Object.keys(catAutoIdx).forEach(k => delete catAutoIdx[k]);
+  cont.innerHTML = cats.map(cat => {
+    const label = cat === 'totes' ? 'Totes' : cat;
+    const ico   = cat === 'totes' ? '📋' : icona(cat);
+    const actiu = cat === catActiva;
+    let autoAttr = '';
+    if (!CATS_FIXES.has(cat)) {
+      const idx = autoIdx++ % 10;
+      catAutoIdx[cat] = idx;
+      autoAttr = ` data-cat-auto="${idx}"`;
+    }
+    return `<button class="filtre${actiu ? ' actiu' : ''}"
+              data-cat="${cat}"${autoAttr}
+              onclick="filtrar('${cat.replace(/'/g,"\\'")}')">
+              ${label}
+            </button>`;
+  }).join('');
+  construirFiltresEtiquetes();
+}
+
+function construirFiltresEtiquetes() {
+  const totes = receptes.flatMap(r =>
+    (r['Etiquetes'] || '').split(',').map(e => netejarEtiqueta(e)).filter(Boolean)
+  );
+  const uniques = [...new Set(totes)].sort();
+  const cont = document.getElementById('filtres-etiquetes');
+  if (!uniques.length) { cont.innerHTML = ''; return; }
+  cont.innerHTML = uniques.map(et => {
+    const actiu = etiquetaActiva.has(et);
+    return `<button class="filtre-etiqueta${actiu ? ' actiu' : ''}"
+              onclick="filtrarEtiqueta('${et.replace(/'/g,"\\'")}')">
+              ${et}
+            </button>`;
+  }).join('');
+}
+
+function filtrarEtiqueta(et) {
+  if (etiquetaActiva.has(et)) etiquetaActiva.delete(et);
+  else etiquetaActiva.add(et);
+  construirFiltresEtiquetes();
+  aplicar();
+}
+
+function filtrar(cat) {
+  catActiva = cat;
+  document.querySelectorAll('.filtre').forEach(b => {
+    b.classList.toggle('actiu', b.dataset.cat === cat);
+  });
+  aplicar();
+}
+
+function toggle(nom) {
+  const estaObert = oberts.has(nom);
+  if (estaObert) oberts.delete(nom);
+  else oberts.add(nom);
+
+  const nomId = nom.replace(/[^a-zA-Z0-9]/g, '_');
+  const card = document.getElementById('card-' + nomId);
+  if (card) {
+    const accordion = card.querySelector('.card-accordion');
+    const arrow = card.querySelector('.card-arrow');
+    const obert = !estaObert;
+    accordion.classList.toggle('obert', obert);
+    arrow.classList.toggle('obert', obert);
+
+    if (obert) {
+      setTimeout(() => {
+        const navH = document.querySelector('.bottom-nav')?.offsetHeight || 64;
+        const cardBottom = card.getBoundingClientRect().bottom;
+        const windowH = window.innerHeight;
+        if (cardBottom > windowH - navH) {
+          window.scrollBy({ top: cardBottom - (windowH - navH) + 16, behavior: 'smooth' });
+        }
+      }, 420);
+    }
+  }
+}
+
+function resetSorpren() {
+  receptaSorpresa = null;
+  // Restaura la visibilitat de totes les cards amagades
+  document.querySelectorAll('#llista .card').forEach(card => {
+    card.style.display = '';
+  });
+  const btn = document.querySelector('.btn-sorpren');
+  if (btn) {
+    btn.textContent = '✨ Sorprèn-me!';
+    btn.style.pointerEvents = '';
+    btn.style.cursor = '';
+    btn.onclick = sorprenMe;
+  }
+}
+
+function aplicar() {
+  resetSorpren(); // quan s'invoca aplicar des de cerca/filtre, sortim del mode sorpresa
+  const q = (document.getElementById('cerca').value || '').toLowerCase();
+  const resultat = receptes.filter(r => {
+    const catOk  = catActiva === 'totes' || r['Categoria'] === catActiva;
+    const nomOk  = r['Nom de la recepta']?.toLowerCase().includes(q);
+    const ingOk  = r['Ingredients']?.toLowerCase().includes(q);
+    const fontOk = !fontActiva || r['Font'] === fontActiva;
+    const etOk  = etiquetaActiva.size === 0 ||
+      (() => {
+        const etRecep = (r['Etiquetes'] || '').split(',').map(e => netejarEtiqueta(e));
+        return [...etiquetaActiva].every(et => etRecep.includes(et));
+      })();
+    return catOk && (nomOk || ingOk) && etOk && fontOk;
+  });
+
+  const comptador = document.getElementById('comptador');
+  comptador.textContent = resultat.length === receptes.length
+    ? '' : `${resultat.length} resultat${resultat.length !== 1 ? 's' : ''}`;
+
+  const llista = document.getElementById('llista');
+  if (!resultat.length) {
+    llista.innerHTML = `<div class="estat">
+      <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+        <path d="M8 11h6M11 8v6" stroke-dasharray="2 2"/>
+      </svg>
+      Cap recepta trobada
+    </div>`;
+    return;
+  }
+
+  llista.innerHTML = resultat.map(r => {
+    const nom        = r['Nom de la recepta'] || '';
+    const cat        = r['Categoria'] || '';
+    const ing        = r['Ingredients'] || '';
+    const font       = r['Font'] || '';
+    const url        = r['URL'] || '';
+    const etiquetes  = r['Etiquetes'] || '';
+    const instruccions = r['Instruccions'] || '';
+    const valoracio  = parseInt(r['Valoracio']) || 0;
+    const obert      = oberts.has(nom);
+    const nomId      = nom.replace(/[^a-zA-Z0-9]/g, '_');
+    const catSelect  = ['', ...CAT_OPCIONS, '__nova__'].map(c => {
+      if (c === '__nova__') return `<option value="__nova__">+ Nova categoria…</option>`;
+      return `<option value="${c}"${c === cat ? ' selected' : ''}>${c || '— Sense categoria —'}</option>`;
+    }).join('');
+    const starsHTML  = [1,2,3,4,5].map(i =>
+      `<span class="card-star${i <= valoracio ? '' : ' off'}" onclick="event.stopPropagation();valorar('${nom.replace(/'/g,"\\'").replace(/"/g,"&quot;")}',${i})" style="cursor:pointer">★</span>`
+    ).join('');
+    const instrHTML  = instruccions
+      ? `<div class="card-section card-instruccions">
+           <div class="card-section-label">Instruccions</div>
+           <ol>${instruccions.split('\n').filter(Boolean).map(s => `<li>${s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</li>`).join('')}</ol>
+         </div>`
+      : '';
+    const etHTML = etiquetes
+      ? `<div class="card-section">
+           <div class="card-section-label">Etiquetes</div>
+           <div class="card-etiquetes">
+             ${etiquetes.split(',').map(e => `<span class="filtre-etiqueta">${netejarEtiqueta(e)}</span>`).join('')}
+           </div>
+         </div>`
+      : '';
+    return `<div class="card" id="card-${nomId}">
+      <div class="card-header" onclick="toggle('${nom.replace(/'/g,"\\'").replace(/"/g,"&quot;")}')" >
+        <span class="card-nom">${nom}</span>
+        <div class="card-dreta">
+          <span class="badge-cat" style="${badgeStyle(cat)}">${cat}</span>
+          <svg class="card-arrow ${obert ? 'obert' : ''}" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="m6 9 6 6 6-6"/>
+          </svg>
+        </div>
+      </div>
+      <div class="card-accordion${obert ? ' obert' : ''}">
+        <div class="card-accordion-inner">
+          <div class="card-body">
+            <div class="card-top-row">
+              <div class="card-top-left">
+                <div class="ingredients-label">Ingredients</div>
+                <p class="ingredients-text" id="vista-ing-${nomId}">${ing.split(' · ').join('<br>')}</p>
+              </div>
+              <div class="card-top-right">
+                <div class="card-stars" aria-label="Valoració: ${valoracio} de 5">${starsHTML}</div>
+                <button class="btn-editar" title="Editar recepta"
+                  onclick="event.stopPropagation(); obrirEdicio('${nomId}', '${nom.replace(/'/g,"\\'").replace(/"/g,"&quot;")}')">
+                  <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+            ${instrHTML}
+            ${etHTML}
+            ${font ? `<p class="card-font" id="vista-font-${nomId}">
+              <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+              ${font}${url ? ` · <a href="${url}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" style="color:var(--accent);text-decoration:none;font-size:12px;">ves-hi</a>` : ''}
+            </p>` : ''}
+            <div class="card-edit-form" id="edit-form-${nomId}" onclick="event.stopPropagation()" style="margin-top:12px;">
+              <div class="card-edit-row">
+                <div class="card-edit-group">
+                  <span class="card-edit-label">Nom</span>
+                  <input type="text" id="edit-nom-${nomId}" value="${nom.replace(/"/g,'&quot;')}">
+                </div>
+                <div class="card-edit-group">
+                  <span class="card-edit-label">Categoria</span>
+                  <div class="select-wrap cat-nova-wrap">
+                    <select id="edit-cat-${nomId}" onchange="handleCatSelect(this)">${catSelect}</select>
+                    <input class="cat-nova-input" type="text" placeholder="Nom de la categoria nova…" onkeydown="if(event.key==='Enter'){confirmarNovaCat(this);event.preventDefault()}" onblur="confirmarNovaCat(this)">
+                  </div>
+                </div>
+              </div>
+              <div class="card-edit-group full">
+                <span class="card-edit-label">Ingredients</span>
+                <textarea id="edit-ing-${nomId}">${ing.split(' · ').join('\n')}</textarea>
+              </div>
+              <div class="card-edit-group full">
+                <span class="card-edit-label">Font</span>
+                <input type="text" id="edit-font-${nomId}" value="${font.replace(/"/g,'&quot;')}">
+              </div>
+              <div class="card-edit-group full">
+                <span class="card-edit-label">URL</span>
+                <input type="text" id="edit-url-${nomId}" value="${url.replace(/"/g,'&quot;')}" placeholder="https://...">
+              </div>
+              <div class="card-edit-group full">
+                <span class="card-edit-label">Instruccions</span>
+                <textarea id="edit-instruccions-${nomId}" style="min-height:100px">${instruccions.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</textarea>
+              </div>
+              <div class="card-edit-group full">
+                <span class="card-edit-label">Etiquetes</span>
+                <input type="text" id="edit-etiquetes-${nomId}" value="${etiquetes.replace(/"/g,'&quot;')}" placeholder="sopar ràpid, meal prep…">
+              </div>
+              <div class="card-edit-accions">
+                <button class="btn-edit-cancel" onclick="tancarEdicio('${nomId}')">Cancel·lar</button>
+                <button class="btn-edit-desar" id="edit-btn-${nomId}"
+                  onclick="desarEdicio('${nomId}', '${nom.replace(/'/g,"\\'").replace(/"/g,"&quot;")}')">
+                  Desar canvis
+                </button>
+              </div>
+              <div style="border-top:1px solid var(--border-dim);padding-top:0.75rem;margin-top:0.25rem;">
+                <button class="btn-edit-eliminar"
+                  onclick="eliminarRecepta('${nomId}', '${nom.replace(/'/g,"\\'").replace(/"/g,"&quot;")}')">
+                  🗑 Eliminar recepta
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function sorprenMe() {
+  if (!receptes.length) return;
+  const idx     = Math.floor(Math.random() * receptes.length);
+  const recepta = receptes[idx];
+  const nom     = recepta['Nom de la recepta'] || '';
+
+  // Amaguem totes les cards excepte la seleccionada
+  catActiva = 'totes';
+  etiquetaActiva.clear();
+  document.getElementById('cerca').value = '';
+  document.getElementById('comptador').textContent = '';
+
+  // Afegim la recepta a oberts ABANS de renderitzar perquè surti desplegada
+  oberts.add(nom);
+
+  // Renderitzem totes les cards al DOM
+  aplicar();
+
+  // Amaguem les que no són la sorpresa
+  setTimeout(() => {
+    const nomId = nom.replace(/[^a-zA-Z0-9]/g, '_');
+    document.querySelectorAll('#llista .card').forEach(card => {
+      if (card.id !== 'card-' + nomId) card.style.display = 'none';
+    });
+    const card = document.getElementById('card-' + nomId);
+    if (card) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 50);
+
+  const btn = document.querySelector('.btn-sorpren');
+  btn.textContent = '🎉 Ta-txaaan! 😋';
+  btn.style.pointerEvents = 'none';
+  btn.style.cursor = 'default';
+  btn.onclick = resetSorpren;
+}
+
+// ── Edició de receptes ──
+
+function obrirEdicio(nomId, nom) {
+  // Primer obrim la card si no estava oberta
+  const nomOriginal = nom;
+  if (!oberts.has(nomOriginal)) {
+    oberts.add(nomOriginal);
+    aplicar();
+  }
+  const form = document.getElementById('edit-form-' + nomId);
+  if (form) form.classList.add('visible');
+
+  // Actualitza el select de categoria amb CAT_OPCIONS actual
+  // (pot haver crescut des que es va renderitzar la targeta)
+  const sel = document.getElementById('edit-cat-' + nomId);
+  if (sel) {
+    const catActual = sel.value;
+    const opts = ['', ...CAT_OPCIONS, '__nova__'].map(c => {
+      if (c === '__nova__') return `<option value="__nova__">+ Nova categoria…</option>`;
+      return `<option value="${c}"${c === catActual ? ' selected' : ''}>${c || '— Sense categoria —'}</option>`;
+    }).join('');
+    sel.innerHTML = opts;
+    sel.value = catActual;
+  }
+}
+
+function tancarEdicio(nomId) {
+  const form = document.getElementById('edit-form-' + nomId);
+  if (form) form.classList.remove('visible');
+}
+
+async function eliminarRecepta(nomId, nomOriginal) {
+  if (!confirm(`Segur que vols eliminar "${nomOriginal}"? Aquesta acció no es pot desfer.`)) return;
+
+  const params = new URLSearchParams({ accio: 'eliminar', nomOriginal });
+  await fetch(`${SHEETS_URL}?${params.toString()}`, { mode: 'no-cors' });
+
+  // Eliminem de la llista local i retirem la card del DOM amb animació
+  const idx = receptes.findIndex(r => r['Nom de la recepta'] === nomOriginal);
+  if (idx !== -1) receptes.splice(idx, 1);
+  oberts.delete(nomOriginal);
+
+  const card = document.getElementById('card-' + nomId);
+  if (card) {
+    card.style.transition = 'opacity 0.3s, transform 0.3s';
+    card.style.opacity = '0';
+    card.style.transform = 'translateX(10px)';
+    setTimeout(() => { card.remove(); aplicar(); }, 310);
+  }
+
+  mostrarToast(`🗑 "${nomOriginal}" eliminada del receptari`);
+}
+
+async function desarEdicio(nomId, nomOriginal) {
+  const btn = document.getElementById('edit-btn-' + nomId);
+  btn.disabled = true;
+  btn.textContent = 'Desant…';
+
+  const nomNou  = document.getElementById('edit-nom-' + nomId).value.trim();
+  const cat     = document.getElementById('edit-cat-' + nomId).value;
+  const ingRaw  = document.getElementById('edit-ing-' + nomId).value.trim();
+  const font    = document.getElementById('edit-font-' + nomId).value.trim();
+  const url     = document.getElementById('edit-url-' + nomId).value.trim();
+  const etiquetes = normalitzarEtiquetes(document.getElementById('edit-etiquetes-' + nomId).value);
+  const instruccions = document.getElementById('edit-instruccions-' + nomId).value.trim();
+
+  // Normalitzem els ingredients: salts de línia → separador ' · '
+  const ing = ingRaw.split('\n').map(l => l.trim()).filter(Boolean).join(' · ');
+
+  const params = new URLSearchParams({
+    accio:        'editar',
+    nomOriginal:  nomOriginal,
+    nom:          nomNou,
+    categoria:    cat,
+    ingredients:  ing,
+    font:         font,
+    url:          url,
+    foto:         '',
+    etiquetes:    etiquetes,
+    instruccions: instruccions,
+    valoracio:    receptes.find(r => r['Nom de la recepta'] === nomOriginal)?.['Valoracio'] || '',
+  });
+
+  try {
+    // Nota: mode:'no-cors' fa la resposta opaca — el fetch mai llançarà error
+    // de xarxa capturable, així que el catch gairebé mai s'activarà.
+    // Si el GSheets falla silenciosament, el toast d'èxit es mostrarà igualment.
+    await fetch(`${SHEETS_URL}?${params.toString()}`, { mode: 'no-cors' });
+    mostrarToast(`✅ "${nomNou}" actualitzada al receptari`);
+
+    btn.disabled = false;
+    btn.textContent = 'Desar canvis';
+
+    // Actualitzem la dada local per reflectir el canvi sense recarregar
+    const idx = receptes.findIndex(r => r['Nom de la recepta'] === nomOriginal);
+    if (idx !== -1) {
+      receptes[idx]['Nom de la recepta'] = nomNou;
+      receptes[idx]['Categoria']         = cat;
+      receptes[idx]['Ingredients']       = ing;
+      receptes[idx]['Font']              = font;
+      receptes[idx]['URL']               = url;
+      receptes[idx]['Etiquetes']         = etiquetes;
+      receptes[idx]['Instruccions']      = instruccions;
+    }
+
+    // Actualitzem el nom al Set d'oberts si ha canviat
+    if (nomNou !== nomOriginal) {
+      oberts.delete(nomOriginal);
+      oberts.add(nomNou);
+    }
+
+    setTimeout(() => { construirFiltres(); aplicar(); }, 400);
+  } catch (e) {
+    mostrarToast(`❌ Error en desar: ${e.message}`);
+    btn.disabled = false;
+    btn.textContent = 'Desar canvis';
+  }
+}
+
+async function valorar(nom, nova) {
+  const idx = receptes.findIndex(r => r['Nom de la recepta'] === nom);
+  if (idx === -1) return;
+
+  const actual = parseInt(receptes[idx]['Valoracio']) || 0;
+  const valoracio = nova === actual ? 0 : nova;
+
+  receptes[idx]['Valoracio'] = String(valoracio);
+
+  const nomId = nom.replace(/[^a-zA-Z0-9]/g, '_');
+  const starsEl = document.querySelector(`#card-${nomId} .card-stars`);
+  if (starsEl) {
+    starsEl.innerHTML = [1,2,3,4,5].map(i =>
+      `<span class="card-star${i <= valoracio ? '' : ' off'}" onclick="event.stopPropagation();valorar('${nom.replace(/'/g,"\\'").replace(/"/g,"&quot;")}',${i})" style="cursor:pointer">★</span>`
+    ).join('');
+    starsEl.setAttribute('aria-label', `Valoració: ${valoracio} de 5`);
+  }
+
+  const r = receptes[idx];
+  const params = new URLSearchParams({
+    accio:        'editar',
+    nomOriginal:  nom,
+    nom:          r['Nom de la recepta'] || '',
+    categoria:    r['Categoria']         || '',
+    ingredients:  r['Ingredients']       || '',
+    font:         r['Font']              || '',
+    url:          r['URL']               || '',
+    foto:         r['Foto']              || '',
+    etiquetes:    r['Etiquetes']         || '',
+    instruccions: r['Instruccions']      || '',
+    valoracio:    String(valoracio),
+  });
+  await fetch(`${SHEETS_URL}?${params.toString()}`, { mode: 'no-cors' });
+  const estrella = valoracio > 0 ? ' ' + '★'.repeat(valoracio) : '';
+  mostrarToast('Valoració desada' + estrella);
+}
+
+// Preescalfament silenciós: desperta el servidor d'Apps Script en segon pla
+// perquè quan l'usuari canviï a mode "fora de casa" ja estigui actiu
+fetch(SHEETS_URL).catch(() => {});
+
+// Carrega inicial + refresca cada 30s, però no si hi ha cards obertes o formularis en edició
+carregar();
+setInterval(() => {
+  const hiHaObertes = oberts.size > 0;
+  const hiHaEdicions = document.querySelector('.card-edit-form.visible') !== null;
+  if (!hiHaObertes && !hiHaEdicions) carregar();
+}, 30000);
+
+// ══════════════════════════════════════════════
+// ESCÀNER — lògica
+// ══════════════════════════════════════════════
+
+const avisServidor  = document.getElementById('avis-servidor');
+const dropZone      = document.getElementById('dropZone');
+const fileInput     = document.getElementById('fileInput');
+const cua           = document.getElementById('cua');
+const btnProcessar  = document.getElementById('btnProcessar');
+const btnExportar   = document.getElementById('btnExportar');
+
+let items = [];
+
+async function comprovarServidor() {
+  try {
+    const r = await fetch(`${API_PYTHON}/ping`, { signal: AbortSignal.timeout(2000) });
+    if (r.ok) { avisServidor.classList.remove('visible'); return true; }
+  } catch {}
+  avisServidor.classList.add('visible');
+  return false;
+}
+comprovarServidor();
+
+dropZone.addEventListener('click', () => fileInput.click());
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault(); dropZone.classList.remove('drag-over');
+  afegirFitxers([...e.dataTransfer.files]);
+});
+fileInput.addEventListener('change', () => { afegirFitxers([...fileInput.files]); fileInput.value = ''; });
+
+function tipusFitxer(file) {
+  if (file.type.startsWith('image/')) return 'imatge';
+  if (file.type === 'application/pdf' || file.name.endsWith('.pdf')) return 'pdf';
+  if (file.name.endsWith('.docx') ||
+      file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document')
+    return 'docx';
+  return null;
+}
+
+function afegirFitxers(files) {
+  files.forEach(file => {
+    const tipus = tipusFitxer(file);
+    if (!tipus) return;
+    const idx = items.length;
+    const item = { file, tipus, status: 'pendent', recepta: null, idx };
+    if (tipus === 'imatge') item.objectURL = URL.createObjectURL(file);
+    items.push(item);
+    renderItem(item);
+  });
+  actualitzarBotons();
+}
+
+function iconaTipus(tipus) {
+  if (tipus === 'pdf')  return '📕';
+  if (tipus === 'docx') return '📘';
+  return null;
+}
+function etiquetaTipus(tipus) {
+  if (tipus === 'imatge') return '📷 Fotografia';
+  if (tipus === 'pdf')    return '📕 PDF';
+  if (tipus === 'docx')   return '📘 Word';
+}
+function detectarCategoriaScan(nom, catDefecte) {
+  const n = nom.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  if (/pat[eé]/.test(n)) return 'Untables';
+  if (/\bbars?\b/.test(n)) return 'Barretes';
+  if (/\bballs?\b/.test(n)) return 'Boletes energètiques';
+  return catDefecte || '';
+}
+
+function catOptions(seleccionada) {
+  return ['', ...CAT_OPCIONS, '__nova__'].map(c => {
+    if (c === '__nova__') return `<option value="__nova__">+ Nova categoria…</option>`;
+    return `<option value="${c}" ${c === seleccionada ? 'selected' : ''}>${c || '— Sense categoria —'}</option>`;
+  }).join('');
+}
+
+function handleCatSelect(sel) {
+  const wrap = sel.closest('.cat-nova-wrap');
+  const input = wrap ? wrap.querySelector('.cat-nova-input') : null;
+  if (!input) return;
+  if (sel.value === '__nova__') {
+    input.style.display = 'block';
+    input.focus();
+  } else {
+    input.style.display = 'none';
+    input.value = '';
+  }
+}
+
+function confirmarNovaCat(input) {
+  const nom = input.value.trim();
+  if (!nom) return;
+  const wrap = input.closest('.cat-nova-wrap');
+  const sel = wrap ? wrap.querySelector('select') : null;
+  if (!sel) return;
+
+  if (!CAT_OPCIONS.includes(nom)) {
+    CAT_OPCIONS.push(nom);
+
+    // Afegeix l'opció a TOTS els selects de categoria oberts a la pàgina
+    document.querySelectorAll('.cat-nova-wrap select').forEach(s => {
+      if (!Array.from(s.options).find(o => o.value === nom)) {
+        const opt = document.createElement('option');
+        opt.value = nom; opt.textContent = nom;
+        s.insertBefore(opt, s.querySelector('option[value="__nova__"]'));
+      }
+    });
+
+    // Actualitza el selector catDefecte del panell scan
+    const defSel = document.getElementById('catDefecte');
+    if (defSel && !Array.from(defSel.options).find(o => o.value === nom)) {
+      const defOpt = document.createElement('option');
+      defOpt.value = nom; defOpt.textContent = nom;
+      defSel.appendChild(defOpt);
+    }
+
+    // Actualitza els filtres de la biblioteca si hi ha receptes carregades
+    if (typeof construirFiltres === 'function' && receptes.length) {
+      construirFiltres();
+    }
+
+    // Guarda la categoria nova al Sheets (no esperem resposta — mode no-cors)
+    const params = new URLSearchParams({ accio: 'guardarCategoria', nom });
+    fetch(`${SHEETS_URL}?${params.toString()}`, { mode: 'no-cors' }).catch(() => {});
+  }
+
+  sel.value = nom;
+  input.style.display = 'none';
+  input.value = '';
+}
+
+function renderItem(item) {
+  const { idx, tipus, file } = item;
+  const catDefecte = document.getElementById('catDefecte').value;
+  const nomFitxer  = file.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const catSug = detectarCategoriaScan(nomFitxer, catDefecte);
+  const div = document.createElement('div');
+  div.className = 'targeta'; div.id = `targeta-${idx}`;
+  const previewHTML = tipus === 'imatge'
+    ? `<img class="targeta-preview" src="${item.objectURL}" alt="${file.name}">`
+    : `<div class="targeta-icona">${iconaTipus(tipus)}</div>`;
+  div.innerHTML = `
+    <div class="targeta-top">
+      ${previewHTML}
+      <div class="targeta-info">
+        <div class="targeta-nom">${file.name}</div>
+        <div class="targeta-estat" id="estat-${idx}"></div>
+        <span class="badge pendent" id="badge-${idx}">Pendent</span>
+      </div>
+      <div class="targeta-accions">
+        <span style="font-size:0.7rem;color:var(--text-muted);font-weight:500">${etiquetaTipus(tipus)}</span>
+        <button class="btn-eliminar" onclick="eliminarItem(${idx})">no, aquesta no!</button>
+      </div>
+    </div>
+    <div class="targeta-form" id="form-${idx}">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Nom de la recepta</label>
+          <input type="text" id="nom-${idx}" placeholder="Títol detectat…">
+        </div>
+        <div class="form-group">
+          <label>Categoria</label>
+          <div class="select-wrap cat-nova-wrap"><select id="cat-${idx}" onchange="handleCatSelect(this)">${catOptions(catSug)}</select><input class="cat-nova-input" type="text" placeholder="Nom de la categoria nova…" onkeydown="if(event.key==='Enter'){confirmarNovaCat(this);event.preventDefault()}" onblur="confirmarNovaCat(this)"></div>
+        </div>
+      </div>
+      <div class="form-group full">
+        <label>Ingredients detectats</label>
+        <textarea id="ing-${idx}" placeholder="Ingredients…"></textarea>
+      </div>
+      <div class="form-group full">
+        <label>Instruccions detectades</label>
+        <textarea id="instruccions-${idx}" placeholder="Instruccions…" style="min-height:100px"></textarea>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Font / Llibre</label>
+          <input type="text" id="font-${idx}" placeholder="Font detectada…">
+        </div>
+        <div class="form-group">
+          <label>Etiquetes</label>
+          <input type="text" id="etiquetes-${idx}" placeholder="sopar ràpid, meal prep…">
+        </div>
+      </div>
+      <button class="btn-desar" id="btn-desar-${idx}" onclick="desarRecepta(${idx})">
+        Desar al Receptari →
+      </button>
+    </div>`;
+  cua.appendChild(div);
+}
+
+function setBadge(idx, classe, text) {
+  const b = document.getElementById(`badge-${idx}`);
+  if (!b) return;
+  b.className = `badge ${classe}`;
+  b.textContent = text;
+}
+function setEstat(idx, text) {
+  const el = document.getElementById(`estat-${idx}`);
+  if (el) el.textContent = text;
+}
+function actualitzarBotons() {
+  btnProcessar.disabled = !items.some(it => it.status === 'pendent');
+  btnExportar.disabled  = !items.some(it => it.recepta);
+}
+function eliminarItem(idx) {
+  items[idx].status = 'eliminat';
+  const targeta = document.getElementById(`targeta-${idx}`);
+  if (targeta) {
+    targeta.style.transition = 'opacity 0.25s, transform 0.25s';
+    targeta.style.opacity = '0';
+    targeta.style.transform = 'translateX(10px)';
+    setTimeout(() => targeta.remove(), 250);
+  }
+  actualitzarBotons();
+}
+
+// ── Processament ──
+btnProcessar.addEventListener('click', async () => {
+  btnProcessar.disabled = true;
+  const pendents   = items.filter(it => it.status === 'pendent');
+  const hiHaImatges = pendents.some(it => it.tipus === 'imatge');
+  let servidorOk = false;
+  if (hiHaImatges) {
+    servidorOk = await comprovarServidor();
+    if (!servidorOk) mostrarToast('⚠️ Inicia el servidor Python per processar les fotografies');
+  }
+  for (const item of pendents) {
+    const { idx, tipus } = item;
+    item.status = 'processant';
+    setBadge(idx, 'processant', 'Processant…');
+    try {
+      if (tipus === 'imatge') {
+        await processarImatge(item, servidorOk);
+      } else {
+        await processarDocument(item);
+      }
+    } catch (e) {
+      item.status = 'error';
+      setBadge(idx, 'error', 'Error');
+      setEstat(idx, e.message || 'No s\'ha pogut processar');
+      console.error(e);
+    }
+  }
+  actualitzarBotons();
+});
+
+// ── OCR via servidor Python ──
+async function processarImatge(item, servidorOk) {
+  const { idx, file } = item;
+  if (!servidorOk) throw new Error('Servidor Python no disponible per a l\'OCR');
+  setEstat(idx, 'Extraient text de la imatge…');
+  setBadge(idx, 'processant', 'Escannejant…');
+  const base64 = await new Promise((res, rej) => {
+    const reader = new FileReader();
+    reader.onload  = e => res(e.target.result);
+    reader.onerror = rej;
+    reader.readAsDataURL(file);
+  });
+  const fontDef = document.getElementById('fontDefecte').value.trim();
+  const resp = await fetch(`${API_PYTHON}/ocr`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ imatge: base64, font: fontDef }),
+  });
+  const dades = await resp.json();
+  if (!resp.ok) throw new Error(dades.error || 'Error desconegut');
+  let fontFinal = dades.font || fontDef;
+  if (/^\s*DE\s*$/i.test(fontFinal)) fontFinal = 'Deliciously Ella';
+  document.getElementById(`nom-${idx}`).value  = dades.nom || '';
+  document.getElementById(`ing-${idx}`).value  = dades.ingredients || '';
+  document.getElementById(`instruccions-${idx}`).value = dades.instruccions || '';
+  document.getElementById(`font-${idx}`).value = fontFinal;
+  const catDef = document.getElementById('catDefecte').value;
+  const selCat = document.getElementById(`cat-${idx}`);
+  const nomImg = document.getElementById(`nom-${idx}`).value;
+  const catSugImg = detectarCategoriaScan(nomImg, catDef);
+  if (catSugImg) selCat.value = catSugImg;
+  item.status = 'fet';
+  setBadge(idx, 'fet', '✓ Escannejat');
+  setEstat(idx, 'Revisa i desa al receptari');
+  document.getElementById(`form-${idx}`).classList.add('visible');
+}
+
+// ── Processament PDF/DOCX ──
+async function processarDocument(item) {
+  const { idx, file, tipus } = item;
+  setEstat(idx, 'Llegint document…');
+  const text = tipus === 'pdf' ? await llegirPdf(file) : await llegirDocx(file);
+  if (!text) throw new Error('Document buit o sense text llegible');
+  const fontDefecte = document.getElementById('fontDefecte').value || '';
+  const recepta     = extraccioLocal(text, fontDefecte);
+  const nomNorm = recepta.nom.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const catDef  = document.getElementById('catDefecte').value || '';
+  const selCat  = document.getElementById(`cat-${idx}`);
+  const catSugDoc = detectarCategoriaScan(nomNorm, catDef);
+  if (catSugDoc) selCat.value = catSugDoc;
+  document.getElementById(`nom-${idx}`).value  = recepta.nom || '';
+  document.getElementById(`ing-${idx}`).value  = recepta.ingredients || '';
+  document.getElementById(`instruccions-${idx}`).value = recepta.instruccions || '';
+  document.getElementById(`font-${idx}`).value = recepta.font || '';
+  item.recepta = recepta; item.status = 'fet';
+  setBadge(idx, 'fet', '✓ Fet');
+  setEstat(idx, 'Revisa i desa al receptari');
+  document.getElementById(`form-${idx}`).classList.add('visible');
+}
+
+async function llegirPdf(file) {
+  const arrayBuffer = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+  let text = '';
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page    = await pdf.getPage(i);
+    const content = await page.getTextContent();
+    text += content.items.map(it => it.str).join(' ') + '\n';
+  }
+  return text.trim();
+}
+
+async function llegirDocx(file) {
+  const arrayBuffer = await file.arrayBuffer();
+  const result = await mammoth.extractRawText({ arrayBuffer });
+  return result.value.trim();
+}
+
+function normalitzarFont(font) {
+  if (!font) return font;
+  const f = font.trim();
+  if (/^DE$/i.test(f))  return 'Deliciously Ella';
+  if (/^PUL$/i.test(f) || /^P\.U\.L\.?$/i.test(f)) return 'Pick Up Limes';
+  if (/^JLL$/i.test(f) || /^JLl$/i.test(f)) return 'Juan Llorca';
+  if (/^XB$/i.test(f))  return 'Xef Bosquet';
+  return f;
+}
+
+function detectarFont(lines, fontDefecte) {
+  const zona = lines.slice(0, 3).join(' ');
+  if (/\bPUL\b|\bP\.U\.L\.?\b|\bP U L\b|\bPul\b|pick.?up.?limes/i.test(zona)) return 'Pick Up Limes';
+  const senseTitol = lines.slice(1, 3).join(' ');
+  if (/\bDE\b/.test(senseTitol) || /\bDeliciously\b/i.test(zona)) return 'Deliciously Ella';
+  const idxIng = lines.findIndex((l, i) => i > 0 && /^ingredients/i.test(l.trim()));
+  const fi     = idxIng > 1 ? idxIng : Math.min(4, lines.length);
+  const zonaAutoria = lines.slice(1, fi);
+  const reMetadades = /\b(racions?|minuts?|hores?|temps|porcions?|serves?)\b/i;
+  const candidats = zonaAutoria.filter(l => {
+    if (reMetadades.test(l)) return false;
+    if (l.length < 3 || l.length > 60) return false;
+    return /[A-ZÀÁÂÃÄÇÈÉÊËÌÍÎÏÒÓÔÙÚÛÜ]/.test(l);
+  });
+  if (candidats.length > 0) {
+    const autoria = candidats[0].trim();
+    return fontDefecte ? `${fontDefecte} – ${autoria}` : autoria;
+  }
+  return fontDefecte;
+}
+
+function normalitzarTitol(titol) {
+  if (!titol) return 'Sense títol';
+  const net = titol.toLowerCase();
+  return net.charAt(0).toUpperCase() + net.slice(1);
+}
+
+function extraccioLocal(text, fontDefecte) {
+  const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+  const nom = normalitzarTitol(lines[0]);
+
+  // Intenta trobar el bloc "Ingredients" (entre capçalera i la següent secció)
+  const reCapcalera = /^(ingredients?|ingredientes?|ingr\.?)\s*:?\s*$/i;
+  const reSeccio    = /^(preparació|preparación|elaboració|mètode|method|instruccions?|passos?|directions?|steps?)\s*:?\s*$/i;
+
+  const idxInici = lines.findIndex(l => reCapcalera.test(l));
+
+  let candidats = [];
+
+  if (idxInici !== -1) {
+    // Tenim un bloc d'ingredients explícit: agafem totes les línies fins a la següent secció
+    const bloc = [];
+    for (let i = idxInici + 1; i < lines.length; i++) {
+      if (reSeccio.test(lines[i])) break;
+      bloc.push(lines[i]);
+    }
+    // Neteja: treu el guionet/bullet inicial i línies massa llargues (probablement notes)
+    candidats = bloc
+      .map(l => l.replace(/^[\-–—•*·]\s*/, '').trim())
+      .filter(l => l.length > 0 && l.length < 120);
+  }
+
+  if (candidats.length === 0) {
+    // Fallback: cerca línies que semblin ingredients per tot el document
+    const reIngredient = /^[\-•*·]|^\d+[\s.,\/]|^(mig|mitja|la meitat|un quart|un terç|una mica|un raig|un grapat|al gust|un pessic|uns quants|unes quantes)\b|\b(g|kg|ml|l|cl|dl|tasses?|cullerades?|culleradetes?|unitats?|grams?|mls?|llaunes?|pots?|brics?|fulles?|branques?|grans?|dents?|rodanxes?)\b/i;
+    candidats = lines.filter(l => reIngredient.test(l))
+      .map(l => l.replace(/^[\-–—•*·]\s*/, '').trim())
+      .slice(0, 30);
+  }
+
+  const ingredients = candidats.length > 0 ? candidats.join(' · ') : lines.slice(1, 8).join(' · ');
+
+  // Extreu el bloc d'instruccions (línies després de la capçalera de secció)
+  const idxInstr = lines.findIndex(l => reSeccio.test(l));
+  let instruccions = '';
+  if (idxInstr !== -1) {
+    const blocInstr = [];
+    for (let i = idxInstr + 1; i < lines.length; i++) {
+      const l = lines[i].replace(/^[\d]+[\.\)]\s*/, '').trim();
+      if (l.length > 0) blocInstr.push(l);
+    }
+    instruccions = blocInstr.join('\n');
+  }
+
+  const font = detectarFont(lines, fontDefecte);
+  return { nom, ingredients, instruccions, font };
+}
+
+// ── Desar a Google Sheets ──
+function normalitzarEtiquetes(raw) {
+  return (raw || '').split(',')
+    .map(e => e.trim().replace(/^#+/, '').trim())
+    .filter(Boolean)
+    .join(', ');
+}
+
+function netejarEtiqueta(e) {
+  return e.trim().replace(/^#+/, '').trim();
+}
+
+// Usa mode:'no-cors' → escriptura sense bloqueig CORS (Google Apps Script)
+// Llegir usa la URL pública CSV → mode:'cors' → tots dos funcionen alhora
+async function desarAGoogleSheets(recepta) {
+  const params = new URLSearchParams({
+    nom:          recepta.nom          || '',
+    categoria:    recepta.categoria    || '',
+    ingredients:  recepta.ingredients  || '',
+    font:         recepta.font         || '',
+    url:          '',
+    foto:         '',
+    etiquetes:    recepta.etiquetes    || '',
+    instruccions: recepta.instruccions || '',
+    valoracio:    '',
+  });
+  await fetch(`${SHEETS_URL}?${params.toString()}`, { mode: 'no-cors' });
+}
+
+async function desarRecepta(idx) {
+  const btn = document.getElementById(`btn-desar-${idx}`);
+  btn.disabled = true; btn.textContent = 'Desant…';
+
+  let fontValue = normalitzarFont(document.getElementById(`font-${idx}`).value.trim());
+
+  const recepta = {
+    nom:          document.getElementById(`nom-${idx}`).value.trim(),
+    categoria:    document.getElementById(`cat-${idx}`).value,
+    ingredients:  document.getElementById(`ing-${idx}`).value.trim(),
+    font:         fontValue,
+    etiquetes:    normalitzarEtiquetes(document.getElementById(`etiquetes-${idx}`)?.value || ''),
+    instruccions: document.getElementById(`instruccions-${idx}`)?.value.trim() || '',
+  };
+  items[idx].recepta = recepta;
+
+  // Si és imatge, intentem també desar al servidor Python
+  if (items[idx].tipus === 'imatge') {
+    try {
+      const resp = await fetch(`${API_PYTHON}/desar`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(recepta),
+      });
+      const dades = await resp.json();
+      if (!resp.ok) throw new Error(dades.error);
+    } catch (e) {
+      console.warn('Servidor Python no disponible, continuant amb Google Sheets:', e.message);
+    }
+  }
+
+  // Sempre desem a Google Sheets (no-cors → funciona des de qualsevol lloc)
+  try {
+    await desarAGoogleSheets(recepta);
+    setBadge(idx, 'desat', '✓ Desat');
+    mostrarToast(`✅ "${recepta.nom || 'Recepta'}" desada al receptari`);
+
+    // Refresca el cercador automàticament per reflectir la nova recepta
+    setTimeout(() => carregar(), 2000);
+  } catch (e) {
+    btn.disabled = false; btn.textContent = 'Desar al Receptari →';
+    mostrarToast(`❌ Error en desar: ${e.message}`);
+    return;
+  }
+
+  const form = document.getElementById(`form-${idx}`);
+  form.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:0.25rem 0">
+      <div style="display:flex;flex-direction:column;gap:0.3rem">
+        <div style="font-family:'Fraunces',serif;font-size:1rem;font-weight:500;color:var(--text)">${recepta.nom || '—'}</div>
+        <div style="font-size:0.78rem;color:var(--text-muted)">${recepta.categoria || '—'}</div>
+      </div>
+      <div style="flex-shrink:0;background:#1a4a22;color:#6fcf97;font-size:0.78rem;font-weight:500;padding:0.45rem 1rem;border-radius:8px;border:1px solid #2d6b35">✓ Desat!</div>
+    </div>`;
+  actualitzarBotons();
+}
+
+// ── Exportar Excel ──
+btnExportar.addEventListener('click', () => {
+  const llista = items
+    .filter(it => it.recepta)
+    .map(it => {
+      const nomEl         = document.getElementById(`nom-${it.idx}`);
+      const catEl         = document.getElementById(`cat-${it.idx}`);
+      const ingEl         = document.getElementById(`ing-${it.idx}`);
+      const fontEl        = document.getElementById(`font-${it.idx}`);
+      const etiquetesEl   = document.getElementById(`etiquetes-${it.idx}`);
+      const instruccionsEl = document.getElementById(`instruccions-${it.idx}`);
+      return {
+        nom:          nomEl          ? nomEl.value.trim()          : it.recepta.nom,
+        categoria:    catEl          ? catEl.value                 : it.recepta.categoria,
+        ingredients:  ingEl          ? ingEl.value.trim()          : it.recepta.ingredients,
+        font:         fontEl         ? fontEl.value.trim()         : it.recepta.font,
+        url:          '',
+        foto:         '',
+        etiquetes:    etiquetesEl    ? normalitzarEtiquetes(etiquetesEl.value) : it.recepta.etiquetes || '',
+        instruccions: instruccionsEl ? instruccionsEl.value.trim() : it.recepta.instruccions || '',
+        valoracio:    '',
+      };
+    });
+  if (!llista.length) return;
+  const wb   = XLSX.utils.book_new();
+  const data = [
+    ['Nom de la recepta', 'Categoria', 'Ingredients', 'Font', 'URL', 'Foto', 'Etiquetes', 'Instruccions', 'Valoracio'],
+    ...llista.map(r => [r.nom, r.categoria, r.ingredients, r.font, r.url, r.foto, r.etiquetes, r.instruccions, r.valoracio])
+  ];
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  ws['!cols'] = [{ wch: 28 }, { wch: 20 }, { wch: 60 }, { wch: 22 }, { wch: 30 }, { wch: 10 }, { wch: 25 }, { wch: 60 }, { wch: 10 }];
+  XLSX.utils.book_append_sheet(wb, ws, 'Receptes');
+  XLSX.writeFile(wb, 'receptes.xlsx');
+});
+// ══════════════════════════════════════════════
+// FORMULARI MANUAL
+// ══════════════════════════════════════════════
+
+function toggleFormDocs() {
+  const wrap  = document.getElementById('formDocsWrap');
+  const btn   = document.getElementById('btnDocsToggle');
+  const arrow = document.getElementById('docs-arrow');
+  const obert = wrap.classList.toggle('obert');
+  arrow.style.transform = obert ? 'rotate(180deg)' : '';
+  btn.style.borderRadius = obert ? '14px 14px 0 0' : '14px';
+}
+
+function toggleFormManual() {
+  const wrap  = document.getElementById('formManualWrap');
+  const btn   = document.getElementById('btnManualToggle');
+  const arrow = document.getElementById('manual-arrow');
+  const obert = wrap.classList.toggle('obert');
+  arrow.style.transform = obert ? 'rotate(180deg)' : '';
+  btn.style.borderRadius = obert ? '14px 14px 0 0' : '14px';
+
+  // Omple el select de categories quan s'obre i fa scroll fins al formulari
+  if (obert) {
+    setTimeout(function() {
+      btn.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 50);
+    const sel = document.getElementById('manual-cat');
+    const catActual = sel.value;
+    sel.innerHTML = ['', ...CAT_OPCIONS, '__nova__'].map(c => {
+      if (c === '__nova__') return '<option value="__nova__">+ Nova categoria…</option>';
+      return '<option value="' + c + '"' + (c === catActual ? ' selected' : '') + '>' + (c || '— Sense categoria —') + '</option>';
+    }).join('');
+    sel.value = catActual;
+    document.getElementById('manual-nom').focus();
+  }
+}
+
+async function desarManual() {
+  const nomEl  = document.getElementById('manual-nom');
+  const errEl  = document.getElementById('manual-error');
+  const nom    = nomEl.value.trim();
+
+  if (!nom) {
+    errEl.textContent = "T'has oblidat de donar-li un nom, a aquesta recepta!";
+    errEl.style.display = 'block';
+    nomEl.style.borderColor = '#E57373';
+    nomEl.focus();
+    return;
+  }
+  errEl.style.display = 'none';
+  nomEl.style.borderColor = '';
+
+  const ingRaw       = document.getElementById('manual-ing').value.trim();
+  const instruccions = document.getElementById('manual-instruccions').value.trim();
+  const ing          = ingRaw.split('\n').map(function(l){ return l.trim(); }).filter(Boolean).join(' · ');
+
+  const recepta = {
+    nom:          nom,
+    categoria:    document.getElementById('manual-cat').value,
+    ingredients:  ing,
+    font:         normalitzarFont(document.getElementById('manual-font').value.trim()),
+    url:          document.getElementById('manual-url').value.trim(),
+    etiquetes:    normalitzarEtiquetes(document.getElementById('manual-etiquetes').value),
+    instruccions: instruccions,
+  };
+
+  const btn = document.querySelector('#formManualWrap .btn-desar');
+  btn.disabled = true;
+  btn.textContent = 'Desant…';
+
+  try {
+    await desarAGoogleSheets(recepta);
+    mostrarToast('✅ "' + nom + '" desada al receptari');
+
+    // Neteja el formulari
+    ['manual-nom','manual-font','manual-url','manual-etiquetes'].forEach(function(id){
+      document.getElementById(id).value = '';
+    });
+    document.getElementById('manual-ing').value = '';
+    document.getElementById('manual-instruccions').value = '';
+    document.getElementById('manual-cat').value = '';
+
+    // Tanca i refresca
+    toggleFormManual();
+    setTimeout(function(){ carregar(); }, 1500);
+  } catch(e) {
+    mostrarToast('❌ Error en desar: ' + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Desar al receptari →';
+  }
+}
+// ══════════════════════════════════════════════
+// DRAWER DE FONTS
+// ══════════════════════════════════════════════
+
+function construirPillsFonts() {
+  const fonts = [...new Set(receptes.map(r => r['Font']).filter(Boolean))].sort();
+  const cont = document.getElementById('fontsPills');
+  if (!fonts.length) { cont.innerHTML = ''; return; }
+  cont.innerHTML = '';
+  fonts.forEach(function(f) {
+    const btn = document.createElement('button');
+    btn.className = 'pill-font' + (f === fontActiva ? ' actiu' : '');
+    btn.textContent = f;
+    btn.addEventListener('click', function() { filtrarFont(f); });
+    cont.appendChild(btn);
+  });
+  const clear = document.createElement('button');
+  clear.className = 'pill-font-clear';
+  clear.textContent = 'Netejar filtre';
+  clear.addEventListener('click', function() { filtrarFont(null); });
+  cont.appendChild(clear);
+}
+
+function filtrarFont(font) {
+  fontActiva = font;
+  construirPillsFonts();
+  aplicar();
+}
+
+function toggleDrawerFonts() {
+  const drawer = document.getElementById('drawerFonts');
+  const btn    = document.getElementById('btnFiltreFonts');
+  const obert  = drawer.classList.toggle('obert');
+  btn.classList.toggle('actiu', obert);
+  if (obert) construirPillsFonts();
+}
+function onCercaInput() {
+  const val = document.getElementById('cerca').value;
+  const btn = document.getElementById('btnClearCerca');
+  btn.classList.toggle('visible', val.length > 0);
+  aplicar();
+}
+
+function netejarCerca() {
+  const input = document.getElementById('cerca');
+  input.value = '';
+  document.getElementById('btnClearCerca').classList.remove('visible');
+  input.focus();
+  aplicar();
+}
+</script>
+
+<!-- Registre del Service Worker (PWA) -->
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./service-worker.js')
+        .then(() => console.log('Service Worker registrat'))
+        .catch(err => console.warn('Error Service Worker:', err));
+    });
+  }
+</script>
+</body>
+</html>
