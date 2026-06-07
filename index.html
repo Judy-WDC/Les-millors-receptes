@@ -1049,7 +1049,7 @@
       </button>
     </div>
   </div>
-  <footer class="portada-footer">receptari personal &nbsp;·&nbsp; 2025</footer>
+  <footer class="portada-footer">receptari personal &nbsp;·&nbsp; 2026</footer>
 </div>
 
 <!-- ══════════════════════════════════════
@@ -1072,7 +1072,7 @@
 <!-- ══════════════════════════════════════
      PANELL 1: CERCADOR
 ══════════════════════════════════════ -->
-<div id="panell-cerca" class="panell actiu">
+<div id="panell-cerca" class="panell">
   <header>
     <h1>Què vols cuinar avui?</h1>
     <p id="subtitol">Carregant...</p>
@@ -1281,46 +1281,45 @@ pdfjsLib.GlobalWorkerOptions.workerSrc =
 // NAVEGACIÓ ENTRE PANELLS
 // ══════════════════════════════════════════════
 
-function anarA(id) {
+// Mostra visualment un panell sense tocar l'historial
+function mostrarPanell(id) {
+  document.querySelectorAll('.panell').forEach(p => p.classList.remove('actiu'));
+  document.querySelectorAll('.bottom-nav-item').forEach(t => t.classList.remove('actiu'));
   document.getElementById('panell-portada').classList.remove('actiu');
-  document.getElementById('nav-principal').classList.add('visible');
-  const tab = document.getElementById('nav-tab-' + id);
-  canviarPanell(id, tab);
+  document.getElementById('nav-principal').classList.remove('visible');
+
+  if (id === 'portada') {
+    document.getElementById('panell-portada').classList.add('actiu');
+  } else {
+    document.getElementById('panell-' + id).classList.add('actiu');
+    document.getElementById('nav-principal').classList.add('visible');
+    const tab = document.getElementById('nav-tab-' + id);
+    if (tab) tab.classList.add('actiu');
+  }
+}
+
+// Navega a un panell afegint entrada a l'historial
+function anarA(id) {
+  mostrarPanell(id);
+  history.pushState({ panell: id }, '', '');
+}
+
+// Canvia de tab (navegació inferior) afegint entrada a l'historial
+function canviarPanell(id, btn) {
+  mostrarPanell(id);
   history.pushState({ panell: id }, '', '');
 }
 
 function tornarInici() {
-  document.querySelectorAll('.panell').forEach(p => p.classList.remove('actiu'));
-  document.querySelectorAll('.bottom-nav-item').forEach(t => t.classList.remove('actiu'));
-  document.getElementById('nav-principal').classList.remove('visible');
-  document.getElementById('panell-portada').classList.add('actiu');
-}
-
-function canviarPanell(id, btn) {
-  document.querySelectorAll('.panell').forEach(p => p.classList.remove('actiu'));
-  document.querySelectorAll('.bottom-nav-item').forEach(t => t.classList.remove('actiu'));
-  document.getElementById('panell-' + id).classList.add('actiu');
-  if (btn) btn.classList.add('actiu');
-  // Només fem pushState si no som a la portada i la crida no ve de popstate
-  if (!_navegantEnrere) history.pushState({ panell: id }, '', '');
+  anarA('portada');
 }
 
 // Inicialitzem l'estat base (portada) a l'historial
-let _navegantEnrere = false;
 history.replaceState({ panell: 'portada' }, '', '');
 
 window.addEventListener('popstate', function(e) {
-  _navegantEnrere = true;
   const estat = e.state;
-  if (!estat || estat.panell === 'portada') {
-    tornarInici();
-  } else {
-    const tab = document.getElementById('nav-tab-' + estat.panell);
-    document.getElementById('panell-portada').classList.remove('actiu');
-    document.getElementById('nav-principal').classList.add('visible');
-    canviarPanell(estat.panell, tab);
-  }
-  _navegantEnrere = false;
+  mostrarPanell(estat && estat.panell ? estat.panell : 'portada');
 });
 
 // ══════════════════════════════════════════════
