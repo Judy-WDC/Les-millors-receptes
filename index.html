@@ -719,6 +719,79 @@
     .card-edit-row { grid-template-columns: 1fr; }
   }
 
+  /* ══════════════════════════════════════
+     TOGGLE DE VISTA
+  ══════════════════════════════════════ */
+  .vista-toggle {
+    display: flex; align-items: center; gap: 6px;
+    margin-bottom: 1rem;
+  }
+  .btn-vista {
+    width: 36px; height: 36px;
+    border-radius: 10px; border: 1.5px solid var(--border-dim);
+    background: var(--surface); color: var(--text-muted);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: all 0.2s; font-size: 17px;
+    flex-shrink: 0;
+  }
+  .btn-vista:hover { border-color: var(--border); color: var(--text-dim); }
+  .btn-vista.actiu { border-color: var(--accent); color: var(--accent); background: rgba(245,247,73,0.07); }
+  .vista-label {
+    font-size: 12px; color: var(--text-muted); flex: 1;
+  }
+
+  /* ══════════════════════════════════════
+     MODE MIG DESPLEGAT (GRID AMB IMATGE)
+  ══════════════════════════════════════ */
+  #llista.vista-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 12px;
+  }
+  #llista.vista-grid .card {
+    margin-bottom: 0;
+    display: flex; flex-direction: column;
+    cursor: pointer;
+  }
+  /* Amaguem l'accordion complet en mode grid */
+  #llista.vista-grid .card-accordion { display: none; }
+
+  .card-img-wrap {
+    display: none;
+    position: relative;
+    width: 100%; height: 140px; overflow: hidden;
+    border-radius: 14px 14px 0 0;
+    background: var(--surface2);
+  }
+  #llista.vista-grid .card-img-wrap { display: block; }
+  .card-img {
+    width: 100%; height: 100%;
+    object-fit: cover; display: block;
+    transition: transform 0.4s ease;
+  }
+  #llista.vista-grid .card:hover .card-img { transform: scale(1.04); }
+  /* Ingredient preview sota el nom, en mode grid */
+  .card-ing-preview {
+    display: none;
+    font-size: 12px; color: var(--text-muted);
+    line-height: 1.5; margin-top: 4px;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+  #llista.vista-grid .card-header {
+    flex-direction: column;
+    align-items: flex-start; gap: 6px;
+    padding: 0.85rem 1rem;
+  }
+  #llista.vista-grid .card-dreta {
+    width: 100%; justify-content: space-between;
+  }
+  #llista.vista-grid .card-ing-preview { display: -webkit-box; }
+  /* Amaguem la fletxa en mode grid (no hi ha accordion) */
+  #llista.vista-grid .card-arrow { display: none; }
+
   /* Toast */
   #toast {
     position: fixed; bottom: 2rem; left: 50%;
@@ -1107,7 +1180,17 @@
     </div>
 
     <div class="filtres" id="filtres"></div>
-    <div class="etiquetes-wrap" id="filtres-etiquetes"></div>
+    <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:1.25rem;">
+      <div class="etiquetes-wrap" id="filtres-etiquetes" style="margin-bottom:0; flex:1;"></div>
+      <div class="vista-toggle" style="margin-bottom:0; flex-shrink:0;">
+        <button class="btn-vista actiu" id="btn-vista-llista" onclick="canviarVista('llista')" title="Vista llista" aria-label="Vista llista">
+          <i class="ti ti-list" aria-hidden="true"></i>
+        </button>
+        <button class="btn-vista" id="btn-vista-grid" onclick="canviarVista('grid')" title="Vista targetes" aria-label="Vista targetes">
+          <i class="ti ti-layout-grid" aria-hidden="true"></i>
+        </button>
+      </div>
+    </div>
     <button class="btn-sorpren" onclick="sorprenMe()">✨ Sorprèn-me!</button>
     <p class="comptador" id="comptador"></p>
     <div id="llista"></div>
@@ -1411,6 +1494,27 @@ function hoverColor(cat) {
   return mapa[cat] || '#F5F749';
 }
 
+let vistaTipus = 'llista'; // 'llista' | 'grid'
+
+function canviarVista(tipus) {
+  vistaTipus = tipus;
+  const llista = document.getElementById('llista');
+  const btnL = document.getElementById('btn-vista-llista');
+  const btnG = document.getElementById('btn-vista-grid');
+  if (tipus === 'grid') {
+    llista.classList.add('vista-grid');
+    btnG.classList.add('actiu');
+    btnL.classList.remove('actiu');
+  } else {
+    llista.classList.remove('vista-grid');
+    btnL.classList.add('actiu');
+    btnG.classList.remove('actiu');
+  }
+  aplicar();
+}
+
+const PLACEHOLDER_IMG = 'recepta-placeholder.png';
+
 async function carregar() {
   if (carregant) return; // evita crides simultànies que penjarien el navegador
   carregant = true;
@@ -1624,9 +1728,14 @@ function aplicar() {
            </div>
          </div>`
       : '';
-    return `<div class="card" id="card-${nomId}">
-      <div class="card-header" onclick="toggle('${nom.replace(/'/g,"\\'").replace(/"/g,"&quot;")}')" >
+    const ingPreview = vistaTipus === 'grid' ? ing.split(' · ').slice(0,6).join(', ') : '';
+    return `<div class="card" id="card-${nomId}" ${vistaTipus === 'grid' ? `onclick="toggle('${nom.replace(/'/g,"\\'").replace(/"/g,'&quot;')}')"` : ''}>
+      <div class="card-img-wrap">
+        <img class="card-img" src="${PLACEHOLDER_IMG}" alt="${nom.replace(/"/g,'&quot;')}" loading="lazy">
+      </div>
+      <div class="card-header" onclick="${vistaTipus === 'grid' ? 'event.stopPropagation()' : `toggle('${nom.replace(/'/g,"\\'").replace(/"/g,"&quot;")}')`}" >
         <span class="card-nom">${nom}</span>
+        ${ingPreview ? `<span class="card-ing-preview">${ingPreview}</span>` : ''}
         <div class="card-dreta">
           <span class="badge-cat" style="${badgeStyle(cat)}">${cat}</span>
           <svg class="card-arrow ${obert ? 'obert' : ''}" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
