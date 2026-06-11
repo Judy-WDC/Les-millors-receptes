@@ -131,7 +131,7 @@
     position: relative;
     margin-bottom: 1.25rem;
   }
-  .cerca-wrap svg {
+  .cerca-wrap > svg {
     position: absolute; left: 14px; top: 50%;
     transform: translateY(-50%);
     color: var(--text-muted); pointer-events: none;
@@ -748,6 +748,11 @@
     grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
     gap: 12px;
   }
+  @media (max-width: 600px) {
+    #llista.vista-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
   #llista.vista-grid .card {
     margin-bottom: 0;
     display: flex; flex-direction: column;
@@ -771,15 +776,6 @@
   }
   #llista.vista-grid .card:hover .card-img { transform: scale(1.04); }
   /* Ingredient preview sota el nom, en mode grid */
-  .card-ing-preview {
-    display: none;
-    font-size: 12px; color: var(--text-muted);
-    line-height: 1.5; margin-top: 4px;
-    overflow: hidden;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-  }
   #llista.vista-grid .card-header {
     flex-direction: column;
     align-items: flex-start; gap: 6px;
@@ -788,9 +784,81 @@
   #llista.vista-grid .card-dreta {
     width: 100%; justify-content: space-between;
   }
-  #llista.vista-grid .card-ing-preview { display: -webkit-box; }
   /* Amaguem la fletxa en mode grid (no hi ha accordion) */
   #llista.vista-grid .card-arrow { display: none; }
+
+  /* ══════════════════════════════════════
+     IDEES
+  ══════════════════════════════════════ */
+  .btn-nova-idea {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 0.6rem 1.1rem; margin-bottom: 1.25rem;
+    background: var(--accent2); border: 1.5px solid var(--accent2);
+    border-radius: 999px; font-family: 'Poppins', sans-serif;
+    font-size: 0.85rem; font-weight: 500; color: var(--text);
+    cursor: pointer; transition: filter 0.15s, transform 0.1s;
+  }
+  .btn-nova-idea:hover { filter: brightness(1.08); }
+  .btn-nova-idea:active { transform: translateY(1px); }
+  .btn-nova-idea i { font-size: 18px; }
+
+  .idea-form {
+    display: none; flex-direction: column; gap: 0.75rem;
+    background: var(--surface); border: 1.5px solid var(--border);
+    border-radius: 14px; padding: 1.1rem 1.1rem 1rem;
+    margin-bottom: 1.25rem;
+  }
+  .idea-form.visible { display: flex; }
+  .idea-form-titol {
+    font-size: 0.78rem; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.06em; color: var(--text-muted); margin-bottom: 0.1rem;
+  }
+
+  /* Autocompletar de recepta */
+  .autocomplete-wrap { position: relative; }
+  .autocomplete-wrap input { padding-right: 2rem !important; }
+  .autocomplete-clear {
+    position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+    background: none; border: none; cursor: pointer; color: var(--text-muted);
+    padding: 2px; line-height: 1; font-size: 13px;
+    display: none; align-items: center; justify-content: center;
+  }
+  .autocomplete-clear:hover { color: var(--text); }
+  .autocomplete-resultats {
+    position: absolute; top: 100%; left: 0; right: 0; z-index: 60;
+    background: var(--surface); border: 1.5px solid var(--border);
+    border-radius: 10px; margin-top: 4px; max-height: 240px; overflow-y: auto;
+    display: none; box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+  }
+  .autocomplete-resultats.obert { display: block; }
+  .autocomplete-item {
+    padding: 0.55rem 0.85rem; font-size: 0.85rem;
+    color: var(--text-dim); cursor: pointer; transition: background 0.1s;
+  }
+  .autocomplete-item:hover { background: var(--surface2); color: var(--text); }
+  .autocomplete-buit { padding: 0.55rem 0.85rem; font-size: 0.8rem; color: var(--text-muted); }
+
+  /* Enllaç a recepta dins d'una idea */
+  .idea-link-recepta {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 0.4rem 0.85rem; border-radius: 999px;
+    background: rgba(245,247,73,0.07); border: 1.5px solid var(--accent);
+    color: var(--accent); font-family: 'Poppins', sans-serif;
+    font-size: 0.82rem; font-weight: 500; cursor: pointer;
+    transition: background 0.15s;
+  }
+  .idea-link-recepta:hover { background: rgba(245,247,73,0.15); }
+  .idea-link-recepta i { font-size: 15px; }
+
+  /* Indicador d'enllaç al header de la idea */
+  .idea-link-dot {
+    display: inline-flex; align-items: center; color: var(--accent);
+    font-size: 15px;
+  }
+  .idea-comentari-text {
+    font-size: 13px; color: var(--text-dim); line-height: 1.7;
+    margin: 0; white-space: pre-wrap;
+  }
 
   /* Toast */
   #toast {
@@ -1114,6 +1182,12 @@
           <span class="portada-boto-desc">Explora el teu receptari per categoria o ingredient</span>
         </div>
       </button>
+      <button class="portada-boto" onclick="anarA('idees')">
+        <div>
+          <span class="portada-boto-titol">Les meves idees</span>
+          <span class="portada-boto-desc">Inspiració ràpida: amanides, truites, idees per cuinar</span>
+        </div>
+      </button>
       <button class="portada-boto" onclick="anarA('scan')">
         <div>
           <span class="portada-boto-titol">Afegir receptes</span>
@@ -1133,6 +1207,11 @@
   <button class="bottom-nav-item actiu" id="nav-tab-cerca" onclick="canviarPanell('cerca', this)">
     <i class="ti ti-book" aria-hidden="true"></i>
     <span>Receptari</span>
+    <div class="nav-dot"></div>
+  </button>
+  <button class="bottom-nav-item" id="nav-tab-idees" onclick="canviarPanell('idees', this)">
+    <i class="ti ti-bulb" aria-hidden="true"></i>
+    <span>Idees</span>
     <div class="nav-dot"></div>
   </button>
   <button class="bottom-nav-item" id="nav-tab-scan" onclick="canviarPanell('scan', this)">
@@ -1161,7 +1240,7 @@
         <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
           <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
         </svg>
-        <input type="text" id="cerca" placeholder="Cerca per nom o ingredient..." oninput="onCercaInput()" />
+        <input type="text" id="cerca" placeholder="Cerca per nom o ingredient..." oninput="onCercaInput()" onkeydown="if(event.key==='Enter')this.blur()" />
         <button class="btn-clear-cerca" id="btnClearCerca" onclick="netejarCerca()" aria-label="Esborrar cerca">
           <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
         </button>
@@ -1194,6 +1273,69 @@
     <button class="btn-sorpren" onclick="sorprenMe()">✨ Sorprèn-me!</button>
     <p class="comptador" id="comptador"></p>
     <div id="llista"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     PANELL: IDEES
+══════════════════════════════════════ -->
+<div id="panell-idees" class="panell">
+  <header>
+    <h1>Les meves idees</h1>
+    <p id="subtitol-idees">Carregant...</p>
+  </header>
+
+  <div class="container">
+    <div class="cerca-wrap">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+      </svg>
+      <input type="text" id="cerca-idees" placeholder="Cerca per títol, etiqueta o comentari..." oninput="onCercaIdeesInput()" onkeydown="if(event.key==='Enter')this.blur()" />
+      <button class="btn-clear-cerca" id="btnClearCercaIdees" onclick="netejarCercaIdees()" aria-label="Esborrar cerca">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+
+    <div class="etiquetes-wrap" id="filtres-etiquetes-idees"></div>
+
+    <button class="btn-nova-idea" onclick="obrirFormIdea()">
+      <i class="ti ti-plus" aria-hidden="true"></i> Nova idea
+    </button>
+
+    <div class="idea-form" id="idea-form-nova">
+      <div class="idea-form-titol">Nova idea</div>
+      <div class="card-edit-group full">
+        <span class="card-edit-label">Títol</span>
+        <input type="text" id="idea-titol" placeholder="Ex: Amanida d'estiu">
+      </div>
+      <div class="card-edit-group full">
+        <span class="card-edit-label">Etiquetes</span>
+        <input type="text" id="idea-etiquetes" placeholder="ràpid, sense cuinar, sopar…">
+      </div>
+      <div class="card-edit-group full">
+        <span class="card-edit-label">Comentari</span>
+        <textarea id="idea-comentari" placeholder="Notes, variacions, què hi posaries…"></textarea>
+      </div>
+      <div class="card-edit-group full">
+        <span class="card-edit-label">Recepta enllaçada (opcional)</span>
+        <div class="autocomplete-wrap">
+          <input type="text" id="idea-recepta-cerca" autocomplete="off" placeholder="Comença a escriure el nom d'una recepta…"
+            oninput="autocompleteRecepta('')"
+            onfocus="autocompleteRecepta('')"
+            onblur="amagarAutocomplete('')" />
+          <button type="button" class="autocomplete-clear" id="idea-recepta-clear" onclick="netejarReceptaIdea('')" aria-label="Treure recepta">✕</button>
+          <div class="autocomplete-resultats" id="idea-recepta-resultats"></div>
+        </div>
+        <input type="hidden" id="idea-recepta-valor">
+      </div>
+      <div class="card-edit-accions">
+        <button class="btn-edit-cancel" onclick="tancarFormIdea()">Cancel·lar</button>
+        <button class="btn-edit-desar" id="idea-desar-btn" onclick="desarIdea()">Desar idea</button>
+      </div>
+    </div>
+
+    <p class="comptador" id="comptador-idees"></p>
+    <div id="llista-idees"></div>
   </div>
 </div>
 
@@ -1378,6 +1520,8 @@ function mostrarPanell(id) {
     document.getElementById('nav-principal').classList.add('visible');
     const tab = document.getElementById('nav-tab-' + id);
     if (tab) tab.classList.add('actiu');
+    // Càrrega mandrosa de les idees el primer cop que s'obre la pestanya
+    if (id === 'idees' && !ideesCarregades) carregarIdees();
   }
 }
 
@@ -1728,14 +1872,12 @@ function aplicar() {
            </div>
          </div>`
       : '';
-    const ingPreview = vistaTipus === 'grid' ? ing.split(' · ').slice(0,6).join(', ') : '';
     return `<div class="card" id="card-${nomId}" ${vistaTipus === 'grid' ? `onclick="toggle('${nom.replace(/'/g,"\\'").replace(/"/g,'&quot;')}')"` : ''}>
       <div class="card-img-wrap">
         <img class="card-img" src="${PLACEHOLDER_IMG}" alt="${nom.replace(/"/g,'&quot;')}" loading="lazy">
       </div>
       <div class="card-header" onclick="${vistaTipus === 'grid' ? 'event.stopPropagation()' : `toggle('${nom.replace(/'/g,"\\'").replace(/"/g,"&quot;")}')`}" >
         <span class="card-nom">${nom}</span>
-        ${ingPreview ? `<span class="card-ing-preview">${ingPreview}</span>` : ''}
         <div class="card-dreta">
           <span class="badge-cat" style="${badgeStyle(cat)}">${cat}</span>
           <svg class="card-arrow ${obert ? 'obert' : ''}" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
@@ -2702,6 +2844,461 @@ function netejarCerca() {
   document.getElementById('btnClearCerca').classList.remove('visible');
   input.focus();
   aplicar();
+}
+
+// ══════════════════════════════════════════════
+// IDEES — estat i lògica
+// ══════════════════════════════════════════════
+
+let idees = [];
+let etiquetaIdeaActiva = new Set();
+let obertsIdees = new Set();
+let ideesCarregades = false;
+let carregantIdees = false;
+
+async function carregarIdees() {
+  if (carregantIdees) return;
+  carregantIdees = true;
+  const sub = document.getElementById('subtitol-idees');
+  try {
+    const r = await fetch(`${SHEETS_URL}?accio=llegirIdees`, { signal: AbortSignal.timeout(8000) });
+    if (!r.ok) throw new Error('Error Sheets: ' + r.status);
+    const data = await r.json();
+    idees = data.idees || [];
+    ideesCarregades = true;
+    actualitzarSubtitolIdees();
+    construirFiltresEtiquetesIdees();
+    aplicarIdees();
+  } catch (e) {
+    if (sub) sub.textContent = 'No s\'han pogut carregar les idees';
+    const llista = document.getElementById('llista-idees');
+    if (llista) llista.innerHTML = `<div class="estat">No s'han pogut carregar les idees. Comprova la connexió i torna a provar.</div>`;
+  } finally {
+    carregantIdees = false;
+  }
+}
+
+function actualitzarSubtitolIdees() {
+  const sub = document.getElementById('subtitol-idees');
+  if (!sub) return;
+  sub.textContent = idees.length
+    ? `Tens ${idees.length} idea${idees.length !== 1 ? 's' : ''} guardades`
+    : 'Encara no tens cap idea — afegeix-ne una!';
+}
+
+function construirFiltresEtiquetesIdees() {
+  const totes = idees.flatMap(it =>
+    (it['Etiquetes'] || '').split(',').map(e => netejarEtiqueta(e)).filter(Boolean)
+  );
+  const uniques = [...new Set(totes)].sort();
+  const cont = document.getElementById('filtres-etiquetes-idees');
+  if (!uniques.length) { cont.innerHTML = ''; return; }
+  cont.innerHTML = uniques.map(et => {
+    const actiu = etiquetaIdeaActiva.has(et);
+    return `<button class="filtre-etiqueta${actiu ? ' actiu' : ''}"
+              onclick="filtrarEtiquetaIdea('${et.replace(/'/g,"\\'")}')">
+              ${et}
+            </button>`;
+  }).join('');
+}
+
+function filtrarEtiquetaIdea(et) {
+  if (etiquetaIdeaActiva.has(et)) etiquetaIdeaActiva.delete(et);
+  else etiquetaIdeaActiva.add(et);
+  construirFiltresEtiquetesIdees();
+  aplicarIdees();
+}
+
+function aplicarIdees() {
+  const q = (document.getElementById('cerca-idees').value || '').toLowerCase();
+  const resultat = idees.filter(it => {
+    const titol = (it['Títol'] || '').toLowerCase();
+    const com   = (it['Comentari'] || '').toLowerCase();
+    const etTxt = (it['Etiquetes'] || '').toLowerCase();
+    const textOk = titol.includes(q) || com.includes(q) || etTxt.includes(q);
+    const etOk = etiquetaIdeaActiva.size === 0 || (() => {
+      const ets = (it['Etiquetes'] || '').split(',').map(e => netejarEtiqueta(e));
+      return [...etiquetaIdeaActiva].every(x => ets.includes(x));
+    })();
+    return textOk && etOk;
+  });
+
+  const comptador = document.getElementById('comptador-idees');
+  comptador.textContent = resultat.length === idees.length
+    ? '' : `${resultat.length} resultat${resultat.length !== 1 ? 's' : ''}`;
+
+  const llista = document.getElementById('llista-idees');
+  if (!idees.length) {
+    llista.innerHTML = `<div class="estat">
+      <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V17h6v-.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2z"/>
+      </svg>
+      Encara no tens cap idea
+    </div>`;
+    return;
+  }
+  if (!resultat.length) {
+    llista.innerHTML = `<div class="estat">
+      <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+      </svg>
+      Cap idea trobada
+    </div>`;
+    return;
+  }
+
+  llista.innerHTML = resultat.map(it => renderIdea(it)).join('');
+}
+
+function renderIdea(it) {
+  const titol     = it['Títol'] || '';
+  const etiquetes = it['Etiquetes'] || '';
+  const comentari = it['Comentari'] || '';
+  const recepta   = it['Recepta'] || '';
+  const obert     = obertsIdees.has(titol);
+  const titolId   = titol.replace(/[^a-zA-Z0-9]/g, '_');
+  const titolJs   = titol.replace(/'/g,"\\'").replace(/"/g,'&quot;');
+
+  const etHTML = etiquetes
+    ? `<div class="card-section">
+         <div class="card-section-label">Etiquetes</div>
+         <div class="card-etiquetes">
+           ${etiquetes.split(',').map(e => `<span class="filtre-etiqueta">${netejarEtiqueta(e)}</span>`).join('')}
+         </div>
+       </div>`
+    : '';
+
+  const comHTML = comentari
+    ? `<div class="card-section">
+         <div class="card-section-label">Comentari</div>
+         <p class="idea-comentari-text">${comentari.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</p>
+       </div>`
+    : '';
+
+  const linkHTML = recepta
+    ? `<div class="card-section">
+         <div class="card-section-label">Recepta enllaçada</div>
+         <button class="idea-link-recepta" onclick="event.stopPropagation(); obrirReceptaPerNom('${recepta.replace(/'/g,"\\'").replace(/"/g,'&quot;')}')">
+           <i class="ti ti-arrow-right" aria-hidden="true"></i> ${recepta}
+         </button>
+       </div>`
+    : '';
+
+  const receptaSelHTML = recepta
+    ? `<input type="text" id="idea-recepta-cerca-${titolId}" autocomplete="off" value="${recepta.replace(/"/g,'&quot;')}"
+         oninput="autocompleteRecepta('-${titolId}')" onfocus="autocompleteRecepta('-${titolId}')" onblur="amagarAutocomplete('-${titolId}')">`
+    : `<input type="text" id="idea-recepta-cerca-${titolId}" autocomplete="off" placeholder="Comença a escriure el nom d'una recepta…"
+         oninput="autocompleteRecepta('-${titolId}')" onfocus="autocompleteRecepta('-${titolId}')" onblur="amagarAutocomplete('-${titolId}')">`;
+
+  return `<div class="card" id="card-idea-${titolId}">
+    <div class="card-header" onclick="toggleIdea('${titolJs}')">
+      <span class="card-nom">${titol}</span>
+      <div class="card-dreta">
+        ${recepta ? `<span class="idea-link-dot" title="Enllaçada a una recepta"><i class="ti ti-link" aria-hidden="true"></i></span>` : ''}
+        <svg class="card-arrow ${obert ? 'obert' : ''}" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="m6 9 6 6 6-6"/>
+        </svg>
+      </div>
+    </div>
+    <div class="card-accordion${obert ? ' obert' : ''}">
+      <div class="card-accordion-inner">
+        <div class="card-body">
+          <div class="card-top-row">
+            <div class="card-top-left">
+              ${comentari || etiquetes || recepta ? '' : '<p class="idea-comentari-text" style="color:var(--text-muted)">Sense detalls. Pots editar aquesta idea per afegir-ne.</p>'}
+            </div>
+            <div class="card-top-right">
+              <button class="btn-editar" title="Editar idea"
+                onclick="event.stopPropagation(); obrirEdicioIdea('${titolId}', '${titolJs}')">
+                <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+          ${comHTML}
+          ${etHTML}
+          ${linkHTML}
+          <div class="card-edit-form" id="idea-edit-form-${titolId}" onclick="event.stopPropagation()" style="margin-top:12px;">
+            <div class="card-edit-group full">
+              <span class="card-edit-label">Títol</span>
+              <input type="text" id="idea-edit-titol-${titolId}" value="${titol.replace(/"/g,'&quot;')}">
+            </div>
+            <div class="card-edit-group full">
+              <span class="card-edit-label">Etiquetes</span>
+              <input type="text" id="idea-edit-etiquetes-${titolId}" value="${etiquetes.replace(/"/g,'&quot;')}" placeholder="ràpid, sense cuinar…">
+            </div>
+            <div class="card-edit-group full">
+              <span class="card-edit-label">Comentari</span>
+              <textarea id="idea-edit-comentari-${titolId}">${comentari.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</textarea>
+            </div>
+            <div class="card-edit-group full">
+              <span class="card-edit-label">Recepta enllaçada (opcional)</span>
+              <div class="autocomplete-wrap">
+                ${receptaSelHTML}
+                <button type="button" class="autocomplete-clear" id="idea-recepta-clear-${titolId}" onclick="netejarReceptaIdea('-${titolId}')" aria-label="Treure recepta" style="${recepta ? 'display:flex' : ''}">✕</button>
+                <div class="autocomplete-resultats" id="idea-recepta-resultats-${titolId}"></div>
+              </div>
+              <input type="hidden" id="idea-recepta-valor-${titolId}" value="${recepta.replace(/"/g,'&quot;')}">
+            </div>
+            <div class="card-edit-accions">
+              <button class="btn-edit-cancel" onclick="tancarEdicioIdea('${titolId}')">Cancel·lar</button>
+              <button class="btn-edit-desar" id="idea-edit-btn-${titolId}"
+                onclick="desarEdicioIdea('${titolId}', '${titolJs}')">Desar canvis</button>
+            </div>
+            <div style="border-top:1px solid var(--border-dim);padding-top:0.75rem;margin-top:0.25rem;">
+              <button class="btn-edit-eliminar" onclick="eliminarIdea('${titolId}', '${titolJs}')">🗑 Eliminar idea</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function toggleIdea(titol) {
+  const estaObert = obertsIdees.has(titol);
+  if (estaObert) obertsIdees.delete(titol);
+  else obertsIdees.add(titol);
+
+  const titolId = titol.replace(/[^a-zA-Z0-9]/g, '_');
+  const card = document.getElementById('card-idea-' + titolId);
+  if (card) {
+    const accordion = card.querySelector('.card-accordion');
+    const arrow = card.querySelector('.card-arrow');
+    const obert = !estaObert;
+    accordion.classList.toggle('obert', obert);
+    arrow.classList.toggle('obert', obert);
+    if (obert) {
+      setTimeout(() => {
+        const navH = document.querySelector('.bottom-nav')?.offsetHeight || 64;
+        const cardBottom = card.getBoundingClientRect().bottom;
+        const windowH = window.innerHeight;
+        if (cardBottom > windowH - navH) {
+          window.scrollBy({ top: cardBottom - (windowH - navH) + 16, behavior: 'smooth' });
+        }
+      }, 420);
+    }
+  }
+}
+
+// ── Cerca d'idees ──
+function onCercaIdeesInput() {
+  const val = document.getElementById('cerca-idees').value;
+  document.getElementById('btnClearCercaIdees').classList.toggle('visible', val.length > 0);
+  aplicarIdees();
+}
+function netejarCercaIdees() {
+  const input = document.getElementById('cerca-idees');
+  input.value = '';
+  document.getElementById('btnClearCercaIdees').classList.remove('visible');
+  input.focus();
+  aplicarIdees();
+}
+
+// ── Formulari de nova idea ──
+function obrirFormIdea() {
+  const form = document.getElementById('idea-form-nova');
+  form.classList.add('visible');
+  document.getElementById('idea-titol').focus();
+}
+function tancarFormIdea() {
+  const form = document.getElementById('idea-form-nova');
+  form.classList.remove('visible');
+  document.getElementById('idea-titol').value = '';
+  document.getElementById('idea-etiquetes').value = '';
+  document.getElementById('idea-comentari').value = '';
+  netejarReceptaIdea('');
+}
+
+async function desarIdea() {
+  const titol = document.getElementById('idea-titol').value.trim();
+  if (!titol) { mostrarToast('⚠️ Posa un títol a la idea'); return; }
+
+  const etiquetes = normalitzarEtiquetes(document.getElementById('idea-etiquetes').value);
+  const comentari = document.getElementById('idea-comentari').value.trim();
+  const recepta   = document.getElementById('idea-recepta-valor').value.trim();
+
+  const btn = document.getElementById('idea-desar-btn');
+  btn.disabled = true; btn.textContent = 'Desant…';
+
+  const params = new URLSearchParams({ accio: 'guardarIdea', titol, etiquetes, comentari, recepta });
+  await fetch(`${SHEETS_URL}?${params.toString()}`, { mode: 'no-cors' });
+
+  // Actualització optimista local
+  idees.push({ 'Títol': titol, 'Etiquetes': etiquetes, 'Comentari': comentari, 'Recepta': recepta });
+
+  btn.disabled = false; btn.textContent = 'Desar idea';
+  tancarFormIdea();
+  actualitzarSubtitolIdees();
+  construirFiltresEtiquetesIdees();
+  aplicarIdees();
+  mostrarToast(`💡 "${titol}" afegida a les idees`);
+}
+
+// ── Edició d'idees ──
+function obrirEdicioIdea(titolId, titol) {
+  if (!obertsIdees.has(titol)) {
+    obertsIdees.add(titol);
+    aplicarIdees();
+  }
+  const form = document.getElementById('idea-edit-form-' + titolId);
+  if (form) form.classList.add('visible');
+}
+function tancarEdicioIdea(titolId) {
+  const form = document.getElementById('idea-edit-form-' + titolId);
+  if (form) form.classList.remove('visible');
+}
+
+async function desarEdicioIdea(titolId, titolOriginal) {
+  const btn = document.getElementById('idea-edit-btn-' + titolId);
+  btn.disabled = true; btn.textContent = 'Desant…';
+
+  const titol     = document.getElementById('idea-edit-titol-' + titolId).value.trim();
+  const etiquetes = normalitzarEtiquetes(document.getElementById('idea-edit-etiquetes-' + titolId).value);
+  const comentari = document.getElementById('idea-edit-comentari-' + titolId).value.trim();
+  const recepta   = document.getElementById('idea-recepta-valor-' + titolId).value.trim();
+
+  if (!titol) { mostrarToast('⚠️ El títol no pot quedar buit'); btn.disabled = false; btn.textContent = 'Desar canvis'; return; }
+
+  const params = new URLSearchParams({
+    accio: 'editarIdea', titolOriginal, titol, etiquetes, comentari, recepta,
+  });
+  await fetch(`${SHEETS_URL}?${params.toString()}`, { mode: 'no-cors' });
+
+  const idx = idees.findIndex(it => (it['Títol'] || '') === titolOriginal);
+  if (idx !== -1) {
+    idees[idx]['Títol'] = titol;
+    idees[idx]['Etiquetes'] = etiquetes;
+    idees[idx]['Comentari'] = comentari;
+    idees[idx]['Recepta'] = recepta;
+  }
+  if (titol !== titolOriginal) {
+    obertsIdees.delete(titolOriginal);
+    obertsIdees.add(titol);
+  }
+
+  btn.disabled = false; btn.textContent = 'Desar canvis';
+  actualitzarSubtitolIdees();
+  construirFiltresEtiquetesIdees();
+  aplicarIdees();
+  mostrarToast(`✅ "${titol}" actualitzada`);
+}
+
+async function eliminarIdea(titolId, titolOriginal) {
+  if (!confirm(`Segur que vols eliminar la idea "${titolOriginal}"? Aquesta acció no es pot desfer.`)) return;
+
+  const params = new URLSearchParams({ accio: 'eliminarIdea', titolOriginal });
+  await fetch(`${SHEETS_URL}?${params.toString()}`, { mode: 'no-cors' });
+
+  const idx = idees.findIndex(it => (it['Títol'] || '') === titolOriginal);
+  if (idx !== -1) idees.splice(idx, 1);
+  obertsIdees.delete(titolOriginal);
+
+  actualitzarSubtitolIdees();
+  construirFiltresEtiquetesIdees();
+  aplicarIdees();
+  mostrarToast(`🗑 "${titolOriginal}" eliminada`);
+}
+
+// ── Autocompletar de recepta (compartit: '' per al formulari nou, '-<id>' per edició) ──
+function autocompleteRecepta(suffix) {
+  const input = document.getElementById('idea-recepta-cerca' + suffix);
+  const cont  = document.getElementById('idea-recepta-resultats' + suffix);
+  if (!input || !cont) return;
+  const q = (input.value || '').trim().toLowerCase();
+
+  // Si el camp queda buit, també buidem el valor seleccionat
+  if (!q) {
+    const valor = document.getElementById('idea-recepta-valor' + suffix);
+    if (valor) valor.value = '';
+    const clear = document.getElementById('idea-recepta-clear' + suffix);
+    if (clear) clear.style.display = 'none';
+    cont.innerHTML = ''; cont.classList.remove('obert');
+    return;
+  }
+
+  const matches = receptes
+    .map(r => r['Nom de la recepta'] || '')
+    .filter(n => n.toLowerCase().includes(q))
+    .slice(0, 8);
+
+  if (!matches.length) {
+    cont.innerHTML = `<div class="autocomplete-buit">Cap recepta coincideix</div>`;
+    cont.classList.add('obert');
+    return;
+  }
+  cont.innerHTML = matches.map(n => {
+    const nJs = n.replace(/'/g,"\\'").replace(/"/g,'&quot;');
+    return `<div class="autocomplete-item" onmousedown="triarReceptaIdea('${suffix}','${nJs}')">${n}</div>`;
+  }).join('');
+  cont.classList.add('obert');
+}
+
+function triarReceptaIdea(suffix, nom) {
+  const input = document.getElementById('idea-recepta-cerca' + suffix);
+  const valor = document.getElementById('idea-recepta-valor' + suffix);
+  const clear = document.getElementById('idea-recepta-clear' + suffix);
+  const cont  = document.getElementById('idea-recepta-resultats' + suffix);
+  if (input) input.value = nom;
+  if (valor) valor.value = nom;
+  if (clear) clear.style.display = 'flex';
+  if (cont) { cont.innerHTML = ''; cont.classList.remove('obert'); }
+}
+
+function netejarReceptaIdea(suffix) {
+  const input = document.getElementById('idea-recepta-cerca' + suffix);
+  const valor = document.getElementById('idea-recepta-valor' + suffix);
+  const clear = document.getElementById('idea-recepta-clear' + suffix);
+  const cont  = document.getElementById('idea-recepta-resultats' + suffix);
+  if (input) input.value = '';
+  if (valor) valor.value = '';
+  if (clear) clear.style.display = 'none';
+  if (cont) { cont.innerHTML = ''; cont.classList.remove('obert'); }
+}
+
+// Amaga el desplegable amb un petit retard perquè el clic (onmousedown) es registri abans
+function amagarAutocomplete(suffix) {
+  setTimeout(() => {
+    const cont = document.getElementById('idea-recepta-resultats' + suffix);
+    if (cont) cont.classList.remove('obert');
+  }, 150);
+}
+
+// ── Salt des d'una idea cap a la recepta enllaçada al receptari ──
+function obrirReceptaPerNom(nom) {
+  const existeix = receptes.some(r => (r['Nom de la recepta'] || '') === nom);
+  if (!existeix) {
+    mostrarToast('La recepta enllaçada ja no existeix al receptari');
+    return;
+  }
+
+  // Canvia al receptari
+  mostrarPanell('cerca');
+  history.pushState({ panell: 'cerca' }, '', '');
+
+  // Neteja filtres i cerca perquè la recepta sigui visible
+  catActiva = 'totes';
+  etiquetaActiva.clear();
+  fontActiva = null;
+  const cercaInput = document.getElementById('cerca');
+  if (cercaInput) cercaInput.value = '';
+  const clearBtn = document.getElementById('btnClearCerca');
+  if (clearBtn) clearBtn.classList.remove('visible');
+  construirFiltresEtiquetes();
+  document.querySelectorAll('.filtre').forEach(b => b.classList.toggle('actiu', b.dataset.cat === 'totes'));
+
+  // Obre la card i renderitza
+  oberts.add(nom);
+  aplicar();
+
+  // Desplaça fins a la recepta
+  setTimeout(() => {
+    const nomId = nom.replace(/[^a-zA-Z0-9]/g, '_');
+    const card = document.getElementById('card-' + nomId);
+    if (card) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 140);
 }
 </script>
 
