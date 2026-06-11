@@ -2882,7 +2882,7 @@ function actualitzarSubtitolIdees() {
   const sub = document.getElementById('subtitol-idees');
   if (!sub) return;
   sub.textContent = idees.length
-    ? `Tens ${idees.length} idea${idees.length !== 1 ? 's' : ''} guardades`
+    ? `Tens ${idees.length} ide${idees.length !== 1 ? 'es' : 'a'} guardad${idees.length !== 1 ? 'es' : 'a'}`
     : 'Encara no tens cap idea — afegeix-ne una!';
 }
 
