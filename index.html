@@ -323,8 +323,8 @@
   .card-accordion-inner { overflow: hidden; }
   .card-body { padding: 20px 16px 16px; border-top: 0.5px solid var(--border-dim); }
   .card-top-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
-  .card-top-left { flex: 1; padding-top: 10px; }
-  .card-top-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  .card-top-left { flex: 1; padding-top: 0; }
+  .card-top-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; padding-top: 0; }
   .card-stars { display: flex; gap: 2px; }
   .card-star { font-size: 15px; color: var(--accent); line-height: 1; }
   .card-star.off { color: var(--border-dim); }
@@ -2968,12 +2968,10 @@ function renderIdea(it) {
        </div>`
     : '';
 
-  const comHTML = comentari
-    ? `<div class="card-section">
-         <div class="card-section-label">Comentari</div>
-         <p class="idea-comentari-text">${comentari.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</p>
-       </div>`
-    : '';
+  const comentariHTML = comentari
+    ? `<div class="card-section-label">Comentari</div>
+       <p class="idea-comentari-text">${comentari.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</p>`
+    : '<p class="idea-comentari-text" style="color:var(--text-muted)">Sense detalls. Pots editar aquesta idea per afegir-ne.</p>';
 
   const linkHTML = recepta
     ? `<div class="card-section">
@@ -3005,7 +3003,7 @@ function renderIdea(it) {
         <div class="card-body">
           <div class="card-top-row">
             <div class="card-top-left">
-              ${comentari || etiquetes || recepta ? '' : '<p class="idea-comentari-text" style="color:var(--text-muted)">Sense detalls. Pots editar aquesta idea per afegir-ne.</p>'}
+              ${comentariHTML}
             </div>
             <div class="card-top-right">
               <button class="btn-editar" title="Editar idea"
@@ -3017,7 +3015,6 @@ function renderIdea(it) {
               </button>
             </div>
           </div>
-          ${comHTML}
           ${etHTML}
           ${linkHTML}
           <div class="card-edit-form" id="idea-edit-form-${titolId}" onclick="event.stopPropagation()" style="margin-top:12px;">
