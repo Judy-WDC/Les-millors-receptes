@@ -342,6 +342,34 @@
   }
   .ingredients-text { font-size: 13px; color: var(--text-dim); line-height: 1.7; margin: 0; }
 
+  /* ── Pujada de foto (formulari d'edició) ── */
+  .foto-edit { display: flex; flex-direction: column; gap: 9px; }
+  .foto-preview {
+    width: 100%; height: 150px; border-radius: 12px; overflow: hidden;
+    background: var(--surface2); border: 1px solid var(--border-dim);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .foto-preview img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .foto-preview-buida { font-size: 12px; color: var(--text-muted); }
+  .foto-edit-accions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .btn-foto {
+    display: inline-flex; align-items: center; gap: 6px; cursor: pointer;
+    padding: 7px 12px; border-radius: 999px;
+    border: 1.5px solid var(--border-dim); background: var(--surface);
+    color: var(--text-dim); font-family: 'Poppins', sans-serif; font-size: 12px;
+    transition: border-color 0.15s, color 0.15s;
+  }
+  .btn-foto:hover { border-color: var(--border); color: var(--text); }
+  .btn-foto input { display: none; }
+  .btn-foto i { font-size: 15px; }
+  .btn-foto-treure {
+    background: none; border: none; cursor: pointer;
+    color: var(--text-muted); font-family: 'Poppins', sans-serif; font-size: 12px;
+    padding: 7px 4px; margin-left: auto;
+  }
+  .btn-foto-treure:hover { color: var(--text-dim); }
+  .foto-estat { font-size: 11px; color: var(--text-muted); min-height: 14px; }
+
   /* ── Mode cuinar ── */
   .btn-cuinar {
     background: transparent; border: none; cursor: pointer;
@@ -1527,7 +1555,7 @@
 
 // URLs — ajusta-les si canvien
 const API_LOCAL  = 'http://localhost:8765/api/receptes';
-const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbxugkDOsSCSvp7YVtHSKuPMzzdA0kTxOTYCWfUFH0bT6CNsgffK_GdCiEJZX_6P1Vx2GQ/exec';
+const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbws2QtQ6jEDVqrAoYYJWu_XE7E2OudMvnTBq96b2-n_4srAAsT9toYnrUm87-6i2rhrOw/exec';
 const API_PYTHON = 'http://localhost:5000';
 
 // Categories — font única de veritat; afegir aquí per reflectir-ho a tot arreu
@@ -1610,6 +1638,9 @@ function mostrarToast(msg) {
 
 let mode = 'fora';
 let receptes = [];
+// Previsualització optimista de fotos acabades de pujar (clau: nom de recepta → dataURL)
+// Es buida en recarregar, quan ja arriba l'URL definitiu de Drive des del full.
+const fotosLocals = {};
 let catActiva = 'totes';
 let etiquetaActiva = new Set();
 let oberts = new Set();
@@ -1735,6 +1766,8 @@ async function carregar() {
     }
     document.getElementById('errorBox').style.display = 'none';
     document.getElementById('missatge-fora').classList.remove('visible');
+    // Un cop recarregat, l'URL definitiu de Drive ja és al full: descartem previsualitzacions locals
+    for (const k in fotosLocals) delete fotosLocals[k];
     document.getElementById('subtitol').textContent =
       `Actualment hi ha ${receptes.length} receptes al teu receptari`;
     construirFiltres();
@@ -1986,6 +2019,8 @@ function aplicar() {
     const etiquetes  = r['Etiquetes'] || '';
     const instruccions = r['Instruccions'] || '';
     const valoracio  = parseInt(r['Valoracio']) || 0;
+    const foto       = (nom in fotosLocals) ? fotosLocals[nom] : (r['Foto'] || '');
+    const fotoSrc    = foto ? foto : PLACEHOLDER_IMG;
     const obert      = oberts.has(nom);
     const nomId      = nom.replace(/[^a-zA-Z0-9]/g, '_');
     const catSelect  = ['', ...CAT_OPCIONS, '__nova__'].map(c => {
@@ -2011,7 +2046,7 @@ function aplicar() {
       : '';
     return `<div class="card" id="card-${nomId}" ${vistaTipus === 'grid' ? `onclick="toggle('${nom.replace(/'/g,"\\'").replace(/"/g,'&quot;')}')"` : ''}>
       <div class="card-img-wrap">
-        <img class="card-img" src="${PLACEHOLDER_IMG}" alt="${nom.replace(/"/g,'&quot;')}" loading="lazy">
+        <img class="card-img" src="${fotoSrc}" alt="${nom.replace(/"/g,'&quot;')}" loading="lazy">
       </div>
       <div class="card-header" onclick="${vistaTipus === 'grid' ? 'event.stopPropagation()' : `toggle('${nom.replace(/'/g,"\\'").replace(/"/g,"&quot;")}')`}" >
         <span class="card-nom">${nom}</span>
@@ -2086,6 +2121,26 @@ function aplicar() {
                     <select id="edit-cat-${nomId}" onchange="handleCatSelect(this)">${catSelect}</select>
                     <input class="cat-nova-input" type="text" placeholder="Nom de la categoria nova…" onkeydown="if(event.key==='Enter'){confirmarNovaCat(this);event.preventDefault()}" onblur="confirmarNovaCat(this)">
                   </div>
+                </div>
+              </div>
+              <div class="card-edit-group full">
+                <span class="card-edit-label">Foto de la recepta</span>
+                <div class="foto-edit">
+                  <div class="foto-preview" id="foto-preview-${nomId}">
+                    ${foto ? `<img src="${foto}" alt="Foto de ${nom.replace(/"/g,'&quot;')}">` : `<span class="foto-preview-buida">Encara no hi ha foto</span>`}
+                  </div>
+                  <div class="foto-edit-accions">
+                    <label class="btn-foto">
+                      <input type="file" accept="image/*" onchange="pujarFotoRecepta('${nomId}','${nom.replace(/'/g,"\\'").replace(/"/g,"&quot;")}', this)">
+                      <i class="ti ti-photo-up" aria-hidden="true"></i> Puja una foto
+                    </label>
+                    <label class="btn-foto">
+                      <input type="file" accept="image/*" capture="environment" onchange="pujarFotoRecepta('${nomId}','${nom.replace(/'/g,"\\'").replace(/"/g,"&quot;")}', this)">
+                      <i class="ti ti-camera" aria-hidden="true"></i> Fes una foto
+                    </label>
+                    <button type="button" class="btn-foto-treure" id="foto-treure-${nomId}" style="${foto ? '' : 'display:none'}" onclick="treureFotoRecepta('${nomId}','${nom.replace(/'/g,"\\'").replace(/"/g,"&quot;")}')">Treure</button>
+                  </div>
+                  <div class="foto-estat" id="foto-estat-${nomId}"></div>
                 </div>
               </div>
               <div class="card-edit-group full">
@@ -2244,7 +2299,7 @@ async function desarEdicio(nomId, nomOriginal) {
     ingredients:  ing,
     font:         font,
     url:          url,
-    foto:         '',
+    foto:         receptes.find(r => r['Nom de la recepta'] === nomOriginal)?.['Foto'] || '',
     etiquetes:    etiquetes,
     instruccions: instruccions,
     valoracio:    receptes.find(r => r['Nom de la recepta'] === nomOriginal)?.['Valoracio'] || '',
@@ -2326,6 +2381,81 @@ async function valorar(nom, nova) {
   await fetch(`${SHEETS_URL}?${params.toString()}`, { mode: 'no-cors' });
   const estrella = valoracio > 0 ? ' ' + '★'.repeat(valoracio) : '';
   mostrarToast('Valoració desada' + estrella);
+}
+
+// ══════════════════════════════════════════════
+// FOTOS DE RECEPTA (pujada a Google Drive via Apps Script)
+// ══════════════════════════════════════════════
+
+// Redueix i comprimeix una imatge abans de pujar-la (màx maxDim px, JPEG)
+function redimensionaImatge(file, maxDim, qualitat) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        let width = img.width, height = img.height;
+        if (width >= height && width > maxDim) { height = Math.round(height * maxDim / width); width = maxDim; }
+        else if (height > width && height > maxDim) { width = Math.round(width * maxDim / height); height = maxDim; }
+        const canvas = document.createElement('canvas');
+        canvas.width = width; canvas.height = height;
+        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', qualitat));
+      };
+      img.onerror = () => reject(new Error('Imatge no vàlida'));
+      img.src = reader.result;
+    };
+    reader.onerror = () => reject(new Error('No s\'ha pogut llegir el fitxer'));
+    reader.readAsDataURL(file);
+  });
+}
+
+async function pujarFotoRecepta(nomId, nom, input) {
+  const file = input.files && input.files[0];
+  if (!file) return;
+  const estat = document.getElementById('foto-estat-' + nomId);
+  if (estat) estat.textContent = 'Processant la imatge…';
+  try {
+    const dataUrl = await redimensionaImatge(file, 1000, 0.82);
+    // Previsualització immediata (optimista)
+    fotosLocals[nom] = dataUrl;
+    const prev = document.getElementById('foto-preview-' + nomId);
+    if (prev) prev.innerHTML = `<img src="${dataUrl}" alt="Foto de ${nom.replace(/"/g,'&quot;')}">`;
+    const treure = document.getElementById('foto-treure-' + nomId);
+    if (treure) treure.style.display = '';
+    const cardImg = document.querySelector('#card-' + nomId + ' .card-img');
+    if (cardImg) cardImg.src = dataUrl;
+    if (estat) estat.textContent = 'Desant la foto al Drive…';
+    // POST al Apps Script: desa a Drive i escriu l'URL a la columna Foto del full
+    const body = new URLSearchParams({ accio: 'guardarFoto', nom: nom, data: dataUrl });
+    await fetch(SHEETS_URL, { method: 'POST', mode: 'no-cors', body });
+    if (estat) estat.textContent = '✅ Foto desada';
+    mostrarToast('📷 Foto desada');
+  } catch (e) {
+    if (estat) estat.textContent = '❌ No s\'ha pogut desar la foto';
+    mostrarToast('❌ Error en desar la foto');
+  } finally {
+    input.value = ''; // permet tornar a triar el mateix fitxer
+  }
+}
+
+async function treureFotoRecepta(nomId, nom) {
+  if (!confirm('Vols treure la foto d\'aquesta recepta?')) return;
+  const estat = document.getElementById('foto-estat-' + nomId);
+  fotosLocals[nom] = '';
+  const idx = receptes.findIndex(r => r['Nom de la recepta'] === nom);
+  if (idx !== -1) receptes[idx]['Foto'] = '';
+  const prev = document.getElementById('foto-preview-' + nomId);
+  if (prev) prev.innerHTML = `<span class="foto-preview-buida">Encara no hi ha foto</span>`;
+  const treure = document.getElementById('foto-treure-' + nomId);
+  if (treure) treure.style.display = 'none';
+  const cardImg = document.querySelector('#card-' + nomId + ' .card-img');
+  if (cardImg) cardImg.src = PLACEHOLDER_IMG;
+  if (estat) estat.textContent = 'Traient la foto…';
+  const body = new URLSearchParams({ accio: 'guardarFoto', nom: nom, data: '' });
+  await fetch(SHEETS_URL, { method: 'POST', mode: 'no-cors', body });
+  if (estat) estat.textContent = 'Foto treta';
+  mostrarToast('Foto treta');
 }
 
 // Preescalfament silenciós: desperta el servidor d'Apps Script en segon pla
