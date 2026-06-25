@@ -129,6 +129,7 @@
      PANELL CERCADOR
   ══════════════════════════════════════ */
   #panell-cerca .container { max-width: 680px; margin: 0 auto; }
+  #panell-idees .container { max-width: 680px; margin: 0 auto; }
 
   .cerca-wrap {
     position: relative;
@@ -152,7 +153,7 @@
   }
   .cerca-wrap input:focus { outline: none; border-color: var(--accent); }
   .cerca-wrap input::placeholder { color: var(--text-muted); }
-  #cerca { padding-left: 2.75rem; padding-right: 3rem; }
+  #cerca, #cerca-idees { padding-left: 2.75rem; padding-right: 3rem; }
   .btn-clear-cerca {
     position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
     background: none; border: none; cursor: pointer;
@@ -305,7 +306,16 @@
     padding: 1rem 1.25rem;
     cursor: pointer;
   }
-  .card-nom { font-size: 15px; font-weight: 500; color: var(--text); }
+  .card-nom { font-size: 15px; font-weight: 500; color: var(--text); flex: 1; min-width: 0; }
+  .card-thumb {
+    width: 38px; height: 38px; border-radius: 8px; object-fit: cover;
+    flex-shrink: 0; background: var(--surface2);
+  }
+  #llista.vista-grid .card-thumb { display: none; }
+  .card-foto-float {
+    width: 110px; height: 110px; border-radius: 10px; object-fit: cover;
+    float: right; margin: 0 0 10px 14px; background: var(--surface2);
+  }
   .card-dreta { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
   .badge-cat {
     font-size: 13px; padding: 3px 10px;
@@ -2049,6 +2059,7 @@ function aplicar() {
         <img class="card-img" src="${fotoSrc}" alt="${nom.replace(/"/g,'&quot;')}" loading="lazy">
       </div>
       <div class="card-header" onclick="${vistaTipus === 'grid' ? 'event.stopPropagation()' : `toggle('${nom.replace(/'/g,"\\'").replace(/"/g,"&quot;")}')`}" >
+        ${foto ? `<img class="card-thumb" src="${foto}" alt="" loading="lazy">` : ''}
         <span class="card-nom">${nom}</span>
         <div class="card-dreta">
           <span class="badge-cat" style="${badgeStyle(cat)}">${cat}</span>
@@ -2077,6 +2088,7 @@ function aplicar() {
                 </button>
               </div>
             </div>
+            ${foto ? `<img class="card-foto-float" src="${foto}" alt="" loading="lazy">` : ''}
             ${(() => {
               const ingArr = ing.split(' · ').map(s => s.trim()).filter(Boolean);
               const estat = cookState[nom] || { actiu: false, marcats: new Set() };
@@ -2425,6 +2437,12 @@ async function pujarFotoRecepta(nomId, nom, input) {
     if (treure) treure.style.display = '';
     const cardImg = document.querySelector('#card-' + nomId + ' .card-img');
     if (cardImg) cardImg.src = dataUrl;
+    const cardThumb = document.querySelector('#card-' + nomId + ' .card-thumb');
+    if (cardThumb) cardThumb.src = dataUrl;
+    else { const h = document.querySelector('#card-' + nomId + ' .card-header'); if (h) { const img = document.createElement('img'); img.className='card-thumb'; img.src=dataUrl; img.loading='lazy'; h.insertBefore(img, h.firstChild); } }
+    const cardFloat = document.querySelector('#card-' + nomId + ' .card-foto-float');
+    if (cardFloat) cardFloat.src = dataUrl;
+    else { const b = document.querySelector('#card-' + nomId + ' .card-body'); if (b) { const img = document.createElement('img'); img.className='card-foto-float'; img.src=dataUrl; img.loading='lazy'; b.querySelector('.card-top-row')?.after(img); } }
     if (estat) estat.textContent = 'Desant la foto al Drive…';
     // POST al Apps Script: desa a Drive i escriu l'URL a la columna Foto del full
     const body = new URLSearchParams({ accio: 'guardarFoto', nom: nom, data: dataUrl });
@@ -2451,6 +2469,10 @@ async function treureFotoRecepta(nomId, nom) {
   if (treure) treure.style.display = 'none';
   const cardImg = document.querySelector('#card-' + nomId + ' .card-img');
   if (cardImg) cardImg.src = PLACEHOLDER_IMG;
+  const cardThumb = document.querySelector('#card-' + nomId + ' .card-thumb');
+  if (cardThumb) cardThumb.remove();
+  const cardFloat = document.querySelector('#card-' + nomId + ' .card-foto-float');
+  if (cardFloat) cardFloat.remove();
   if (estat) estat.textContent = 'Traient la foto…';
   const body = new URLSearchParams({ accio: 'guardarFoto', nom: nom, data: '' });
   await fetch(SHEETS_URL, { method: 'POST', mode: 'no-cors', body });
