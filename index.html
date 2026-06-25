@@ -956,6 +956,101 @@
   #toast.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
 
   /* ══════════════════════════════════════
+     PANELL DETALL RECEPTA
+  ══════════════════════════════════════ */
+  #panell-detall { padding: 0 0 120px; }
+  .detall-header {
+    display: flex; align-items: center; gap: 12px;
+    padding: 1rem 1.25rem;
+  }
+  .detall-header-back {
+    background: none; border: none; cursor: pointer;
+    color: var(--accent); font-size: 20px; padding: 4px;
+    display: flex; align-items: center;
+  }
+  .detall-header-back:hover { opacity: 0.7; }
+  .detall-header-text {
+    font-size: 13px; color: var(--text-muted); flex: 1;
+  }
+  .detall-header-icons { display: flex; gap: 10px; }
+  .detall-header-icons button {
+    background: none; border: none; cursor: pointer;
+    color: var(--text-muted); font-size: 18px; padding: 4px;
+    display: flex; align-items: center;
+  }
+  .detall-header-icons button:hover { color: var(--text); }
+  .detall-hero {
+    width: 100%; height: 240px; object-fit: cover;
+    display: block; background: var(--surface2);
+  }
+  .detall-hero-placeholder {
+    width: 100%; height: 180px;
+    background: var(--surface2);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-muted); font-size: 36px;
+  }
+  .detall-contingut {
+    max-width: 680px; margin: 0 auto;
+    padding: 1.25rem 1.5rem;
+  }
+  .detall-nom {
+    font-family: 'Fraunces', serif;
+    font-size: 1.6rem; font-weight: 500;
+    color: var(--text); line-height: 1.25;
+    margin: 0 0 10px;
+  }
+  .detall-meta {
+    display: flex; align-items: center; gap: 10px;
+    flex-wrap: wrap; margin-bottom: 1.25rem;
+  }
+  .detall-seccio { margin-bottom: 1.25rem; }
+  .detall-seccio-label {
+    font-size: 10px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.08em; color: var(--text-muted); margin-bottom: 8px;
+  }
+  .detall-ing {
+    font-size: 14px; color: var(--text-dim); line-height: 2;
+  }
+  .detall-ing-dot { color: var(--border); margin-right: 8px; }
+  .detall-instruccions ol {
+    margin: 0; padding-left: 20px;
+  }
+  .detall-instruccions li {
+    font-size: 14px; color: var(--text-dim); line-height: 1.75;
+    margin-bottom: 4px;
+  }
+  .detall-comentari {
+    font-size: 14px; color: var(--text-muted); line-height: 1.7;
+    font-style: italic; margin: 0; white-space: pre-line;
+  }
+  .detall-font {
+    font-size: 12px; color: var(--text-muted);
+    display: flex; align-items: center; gap: 6px;
+    margin-bottom: 1rem;
+  }
+  .detall-btn-cuinar {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    width: 100%; padding: 14px; border-radius: 14px;
+    background: var(--accent); color: var(--bg);
+    font-family: 'Poppins', sans-serif;
+    font-size: 15px; font-weight: 600;
+    border: none; cursor: pointer;
+    margin-top: 0.5rem;
+    transition: filter 0.15s;
+  }
+  .detall-btn-cuinar:hover { filter: brightness(1.08); }
+  .detall-btn-cuinar.actiu {
+    background: var(--surface2); color: var(--text-muted);
+    border: 1.5px solid var(--border-dim);
+  }
+  .detall-btn-cuinar i { font-size: 20px; }
+  @media (max-width: 600px) {
+    .detall-hero { height: 200px; }
+    .detall-contingut { padding: 1rem; }
+    .detall-nom { font-size: 1.35rem; }
+  }
+
+  /* ══════════════════════════════════════
      RESPONSIVE
   ══════════════════════════════════════ */
   @media (max-width: 600px) {
@@ -1555,6 +1650,11 @@
   </div>
 </div>
 
+<!-- ══════════════════════════════════════
+     PANELL: DETALL RECEPTA
+══════════════════════════════════════ -->
+<div id="panell-detall" class="panell"></div>
+
 <!-- Toast -->
 <div id="toast"></div>
 
@@ -1628,8 +1728,154 @@ history.replaceState({ panell: 'portada' }, '', '');
 
 window.addEventListener('popstate', function(e) {
   const estat = e.state;
-  mostrarPanell(estat && estat.panell ? estat.panell : 'portada');
+  if (estat && estat.panell === 'detall' && estat.receptaNom) {
+    obrirDetall(estat.receptaNom, true);
+  } else {
+    mostrarPanell(estat && estat.panell ? estat.panell : 'portada');
+  }
 });
+
+// ══════════════════════════════════════════════
+// PANELL DETALL RECEPTA
+// ══════════════════════════════════════════════
+
+function obrirDetall(nom, desDePopstate) {
+  const r = receptes.find(x => x['Nom de la recepta'] === nom);
+  if (!r) return;
+
+  const cat        = r['Categoria'] || '';
+  const ing        = r['Ingredients'] || '';
+  const font       = r['Font'] || '';
+  const url        = r['URL'] || '';
+  const etiquetes  = r['Etiquetes'] || '';
+  const instruccions = r['Instruccions'] || '';
+  const comentaris = r['Comentaris'] || '';
+  const valoracio  = parseInt(r['Valoracio']) || 0;
+  const foto       = (nom in fotosLocals) ? fotosLocals[nom] : (r['Foto'] || '');
+  const nomId      = nom.replace(/[^a-zA-Z0-9]/g, '_');
+  const nomEsc     = nom.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+
+  const starsHTML = [1,2,3,4,5].map(i =>
+    `<span class="card-star${i <= valoracio ? '' : ' off'}">★</span>`
+  ).join('');
+
+  const heroHTML = foto
+    ? `<img class="detall-hero" src="${foto}" alt="${nom.replace(/"/g,'&quot;')}">`
+    : `<div class="detall-hero-placeholder"><i class="ti ti-tools-kitchen-2" aria-hidden="true"></i></div>`;
+
+  const ingArr = ing ? ing.split(' · ').map(s => s.trim()).filter(Boolean) : [];
+  const ckEstat = cookState[nom] || { actiu: false, marcats: new Set() };
+  const ckTotal = ingArr.length;
+  const ckFets = ingArr.filter((_, i) => ckEstat.marcats.has(i)).length;
+  const ckPct = ckTotal ? Math.round(ckFets / ckTotal * 100) : 0;
+  const ckSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>`;
+
+  const ingSecHTML = ckTotal ? `<div class="detall-seccio">
+    <div class="detall-seccio-label">Ingredients</div>
+    <div class="ck-progress" id="det-ck-prog-wrap-${nomId}" style="${ckEstat.actiu ? '' : 'display:none'}">
+      <div class="ck-progress-top">
+        <span class="ck-progress-text"><span id="det-ck-prog-${nomId}">${ckFets}</span>/${ckTotal} marcats</span>
+        <button class="ck-reinicia" id="det-ck-reinicia-${nomId}" style="${ckFets ? '' : 'display:none'}" onclick="reiniciarCook('${nomId}','${nomEsc}')">Desmarca-ho tot</button>
+      </div>
+      <div class="ck-bar-track"><div class="ck-bar" id="det-ck-bar-${nomId}" style="width:${ckPct}%"></div></div>
+    </div>
+    <div class="ck-list${ckEstat.actiu ? ' cuinant' : ''}" id="det-ck-list-${nomId}">
+      ${ingArr.map((item, idx) => {
+        const fet = ckEstat.marcats.has(idx) ? ' fet' : '';
+        const safe = item.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        return `<div class="ck-ing${fet}" id="det-ck-ing-${nomId}-${idx}" onclick="toggleIngredient('${nomId}','${nomEsc}',${idx})">
+          <span class="ck-circle">${ckSvg}</span>
+          <span class="ck-txt">${safe}</span>
+        </div>`;
+      }).join('')}
+    </div>
+  </div>` : '';
+
+  const instrHTML = instruccions
+    ? `<div class="detall-seccio detall-instruccions">
+         <div class="detall-seccio-label">Instruccions</div>
+         <ol>${instruccions.split('\n').filter(Boolean).map(s => `<li>${s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</li>`).join('')}</ol>
+       </div>`
+    : '';
+
+  const comHTML = comentaris
+    ? `<div class="detall-seccio">
+         <div class="detall-seccio-label">Comentaris</div>
+         <p class="detall-comentari">${comentaris.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</p>
+       </div>`
+    : '';
+
+  const etHTML = etiquetes
+    ? `<div class="detall-seccio">
+         ${etiquetes.split(',').map(e => `<span class="filtre-etiqueta">${netejarEtiqueta(e)}</span>`).join(' ')}
+       </div>`
+    : '';
+
+  const fontHTML = font
+    ? `<div class="detall-font">
+         <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+         ${font}${url ? ` · <a href="${url}" target="_blank" rel="noopener noreferrer" style="color:var(--accent);text-decoration:none;">ves-hi</a>` : ''}
+       </div>`
+    : '';
+
+  const panell = document.getElementById('panell-detall');
+  panell.innerHTML = `
+    <div class="detall-header">
+      <button class="detall-header-back" onclick="history.back()" aria-label="Tornar">
+        <i class="ti ti-arrow-left" aria-hidden="true"></i>
+      </button>
+      <span class="detall-header-text">Tornar al receptari</span>
+      <div class="detall-header-icons">
+        <button onclick="detallEditar('${nomId}','${nomEsc}')" title="Editar recepta" aria-label="Editar recepta">
+          <i class="ti ti-edit" aria-hidden="true"></i>
+        </button>
+      </div>
+    </div>
+    ${heroHTML}
+    <div class="detall-contingut">
+      <div class="detall-nom">${nom}</div>
+      <div class="detall-meta">
+        <span class="badge-cat" style="${badgeStyle(cat)}">${cat}</span>
+        <div class="card-stars">${starsHTML}</div>
+      </div>
+      ${ingSecHTML}
+      ${instrHTML}
+      ${comHTML}
+      ${etHTML}
+      ${fontHTML}
+      <button class="detall-btn-cuinar${ckEstat.actiu ? ' actiu' : ''}" id="det-ck-btn-${nomId}" onclick="toggleCookMode('${nomId}','${nomEsc}')">
+        <i class="ti ti-soup" aria-hidden="true"></i>
+        <span id="det-ck-btn-text-${nomId}">${ckEstat.actiu ? 'Sortir del mode cuinar' : 'Mode cuinar'}</span>
+      </button>
+    </div>
+  `;
+
+  // Mostrem el panell
+  document.querySelectorAll('.panell').forEach(p => p.classList.remove('actiu'));
+  document.getElementById('panell-portada').classList.remove('actiu');
+  panell.classList.add('actiu');
+  document.getElementById('nav-principal').classList.add('visible');
+  document.querySelectorAll('.bottom-nav-item').forEach(t => t.classList.remove('actiu'));
+  const tab = document.getElementById('nav-tab-cerca');
+  if (tab) tab.classList.add('actiu');
+  window.scrollTo(0, 0);
+
+  if (!desDePopstate) {
+    history.pushState({ panell: 'detall', receptaNom: nom }, '', '');
+  }
+}
+
+function detallEditar(nomId, nom) {
+  mostrarPanell('cerca');
+  history.pushState({ panell: 'cerca' }, '', '');
+  if (vistaTipus === 'grid') canviarVista('llista');
+  if (!oberts.has(nom)) { oberts.add(nom); aplicarFiltre(); }
+  setTimeout(() => {
+    obrirEdicio(nomId, nom);
+    document.getElementById('card-' + nomId)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 150);
+}
+
 
 // ══════════════════════════════════════════════
 // UTILITATS COMPARTIDES
@@ -1894,8 +2140,8 @@ function toggleCookMode(nomId, nom) {
   if (!estat.actiu) estat.marcats = new Set(); // en sortir, es neteja tot
   cookState[nom] = estat;
 
+  // Actualitza elements de la card (accordion)
   const card = document.getElementById('card-' + nomId);
-  if (!card) return;
   const btn     = document.getElementById('ck-btn-' + nomId);
   const llista   = document.getElementById('ck-list-' + nomId);
   const progWrap = document.getElementById('ck-prog-wrap-' + nomId);
@@ -1904,10 +2150,26 @@ function toggleCookMode(nomId, nom) {
   if (llista) llista.classList.toggle('cuinant', estat.actiu);
   if (progWrap) progWrap.style.display = estat.actiu ? '' : 'none';
 
-  // Si sortim, desmarquem visualment totes les files
-  if (!estat.actiu) {
+  if (!estat.actiu && card) {
     card.querySelectorAll('.ck-ing.fet').forEach(el => el.classList.remove('fet'));
   }
+
+  // Actualitza elements de la pàgina de detall (det-)
+  const detBtn     = document.getElementById('det-ck-btn-' + nomId);
+  const detBtnText = document.getElementById('det-ck-btn-text-' + nomId);
+  const detLlista  = document.getElementById('det-ck-list-' + nomId);
+  const detProgWrap = document.getElementById('det-ck-prog-wrap-' + nomId);
+
+  if (detBtn)     detBtn.classList.toggle('actiu', estat.actiu);
+  if (detBtnText) detBtnText.textContent = estat.actiu ? 'Sortir del mode cuinar' : 'Mode cuinar';
+  if (detLlista)  detLlista.classList.toggle('cuinant', estat.actiu);
+  if (detProgWrap) detProgWrap.style.display = estat.actiu ? '' : 'none';
+
+  if (!estat.actiu) {
+    const detPanell = document.getElementById('panell-detall');
+    if (detPanell) detPanell.querySelectorAll('.ck-ing.fet').forEach(el => el.classList.remove('fet'));
+  }
+
   actualitzarProgresCook(nomId, nom);
 
   // Manteniment de pantalla encesa
@@ -1918,12 +2180,14 @@ function toggleCookMode(nomId, nom) {
 
 function toggleIngredient(nomId, nom, idx) {
   const estat = cookState[nom];
-  if (!estat || !estat.actiu) return; // només clicable en mode cuinar
+  if (!estat || !estat.actiu) return;
   if (estat.marcats.has(idx)) estat.marcats.delete(idx);
   else estat.marcats.add(idx);
 
   const row = document.getElementById('ck-ing-' + nomId + '-' + idx);
   if (row) row.classList.toggle('fet', estat.marcats.has(idx));
+  const detRow = document.getElementById('det-ck-ing-' + nomId + '-' + idx);
+  if (detRow) detRow.classList.toggle('fet', estat.marcats.has(idx));
   actualitzarProgresCook(nomId, nom);
 }
 
@@ -1933,20 +2197,34 @@ function reiniciarCook(nomId, nom) {
   estat.marcats = new Set();
   const card = document.getElementById('card-' + nomId);
   if (card) card.querySelectorAll('.ck-ing.fet').forEach(el => el.classList.remove('fet'));
+  const detPanell = document.getElementById('panell-detall');
+  if (detPanell) detPanell.querySelectorAll('.ck-ing.fet').forEach(el => el.classList.remove('fet'));
   actualitzarProgresCook(nomId, nom);
 }
 
 function actualitzarProgresCook(nomId, nom) {
   const estat = cookState[nom] || { marcats: new Set() };
+  const fets = estat.marcats.size;
+
+  // Actualitza card (accordion)
   const llista = document.getElementById('ck-list-' + nomId);
   const total = llista ? llista.querySelectorAll('.ck-ing').length : 0;
-  const fets = estat.marcats.size;
   const progEl = document.getElementById('ck-prog-' + nomId);
   const barEl  = document.getElementById('ck-bar-' + nomId);
   const resetEl = document.getElementById('ck-reinicia-' + nomId);
   if (progEl) progEl.textContent = fets;
   if (barEl)  barEl.style.width = (total ? Math.round(fets / total * 100) : 0) + '%';
   if (resetEl) resetEl.style.display = fets > 0 ? '' : 'none';
+
+  // Actualitza pàgina de detall (det-)
+  const detLlista = document.getElementById('det-ck-list-' + nomId);
+  const detTotal = detLlista ? detLlista.querySelectorAll('.ck-ing').length : 0;
+  const detProgEl = document.getElementById('det-ck-prog-' + nomId);
+  const detBarEl  = document.getElementById('det-ck-bar-' + nomId);
+  const detResetEl = document.getElementById('det-ck-reinicia-' + nomId);
+  if (detProgEl) detProgEl.textContent = fets;
+  if (detBarEl)  detBarEl.style.width = (detTotal ? Math.round(fets / detTotal * 100) : 0) + '%';
+  if (detResetEl) detResetEl.style.display = fets > 0 ? '' : 'none';
 }
 
 // ── Manteniment de pantalla encesa (Wake Lock) ──
@@ -2061,7 +2339,7 @@ function aplicar() {
            <p style="font-size:13px;color:var(--text-dim);line-height:1.65;margin:0;white-space:pre-line">${comentaris.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</p>
          </div>`
       : '';
-    return `<div class="card" id="card-${nomId}" ${vistaTipus === 'grid' ? `onclick="toggle('${nom.replace(/'/g,"\\'").replace(/"/g,'&quot;')}')"` : ''}>
+    return `<div class="card" id="card-${nomId}" ${vistaTipus === 'grid' ? `onclick="obrirDetall('${nom.replace(/'/g,"\\'").replace(/"/g,'&quot;')}')"` : ''}>
       <div class="card-img-wrap">
         <img class="card-img" src="${fotoSrc}" alt="${nom.replace(/"/g,'&quot;')}" loading="lazy">
       </div>
