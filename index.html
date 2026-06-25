@@ -2028,6 +2028,7 @@ function aplicar() {
     const url        = r['URL'] || '';
     const etiquetes  = r['Etiquetes'] || '';
     const instruccions = r['Instruccions'] || '';
+    const comentaris = r['Comentaris'] || '';
     const valoracio  = parseInt(r['Valoracio']) || 0;
     const foto       = (nom in fotosLocals) ? fotosLocals[nom] : (r['Foto'] || '');
     const fotoSrc    = foto ? foto : PLACEHOLDER_IMG;
@@ -2052,6 +2053,12 @@ function aplicar() {
            <div class="card-etiquetes">
              ${etiquetes.split(',').map(e => `<span class="filtre-etiqueta">${netejarEtiqueta(e)}</span>`).join('')}
            </div>
+         </div>`
+      : '';
+    const comHTML = comentaris
+      ? `<div class="card-section">
+           <div class="card-section-label">Comentaris</div>
+           <p style="font-size:13px;color:var(--text-dim);line-height:1.65;margin:0;white-space:pre-line">${comentaris.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</p>
          </div>`
       : '';
     return `<div class="card" id="card-${nomId}" ${vistaTipus === 'grid' ? `onclick="toggle('${nom.replace(/'/g,"\\'").replace(/"/g,'&quot;')}')"` : ''}>
@@ -2116,6 +2123,7 @@ function aplicar() {
               </div>`;
             })()}
             ${instrHTML}
+            ${comHTML}
             ${etHTML}
             ${font ? `<p class="card-font" id="vista-font-${nomId}">
               <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
@@ -2170,6 +2178,10 @@ function aplicar() {
               <div class="card-edit-group full">
                 <span class="card-edit-label">Instruccions</span>
                 <textarea id="edit-instruccions-${nomId}" style="min-height:100px">${instruccions.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</textarea>
+              </div>
+              <div class="card-edit-group full">
+                <span class="card-edit-label">Comentaris</span>
+                <textarea id="edit-comentaris-${nomId}" placeholder="Notes, trucs, variacions…">${comentaris.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</textarea>
               </div>
               <div class="card-edit-group full">
                 <span class="card-edit-label">Etiquetes</span>
@@ -2299,6 +2311,7 @@ async function desarEdicio(nomId, nomOriginal) {
   const url     = document.getElementById('edit-url-' + nomId).value.trim();
   const etiquetes = normalitzarEtiquetes(document.getElementById('edit-etiquetes-' + nomId).value);
   const instruccions = document.getElementById('edit-instruccions-' + nomId).value.trim();
+  const comentaris = document.getElementById('edit-comentaris-' + nomId).value.trim();
 
   // Normalitzem els ingredients: salts de línia → separador ' · '
   const ing = ingRaw.split('\n').map(l => l.trim()).filter(Boolean).join(' · ');
@@ -2314,6 +2327,7 @@ async function desarEdicio(nomId, nomOriginal) {
     foto:         receptes.find(r => r['Nom de la recepta'] === nomOriginal)?.['Foto'] || '',
     etiquetes:    etiquetes,
     instruccions: instruccions,
+    comentaris:   comentaris,
     valoracio:    receptes.find(r => r['Nom de la recepta'] === nomOriginal)?.['Valoracio'] || '',
   });
 
@@ -2337,6 +2351,7 @@ async function desarEdicio(nomId, nomOriginal) {
       receptes[idx]['URL']               = url;
       receptes[idx]['Etiquetes']         = etiquetes;
       receptes[idx]['Instruccions']      = instruccions;
+      receptes[idx]['Comentaris']        = comentaris;
     }
 
     // Actualitzem el nom al Set d'oberts si ha canviat
@@ -2931,6 +2946,7 @@ async function desarAGoogleSheets(recepta) {
     foto:         '',
     etiquetes:    recepta.etiquetes    || '',
     instruccions: recepta.instruccions || '',
+    comentaris:   recepta.comentaris   || '',
     valoracio:    '',
   });
   await fetch(`${SHEETS_URL}?${params.toString()}`, { mode: 'no-cors' });
