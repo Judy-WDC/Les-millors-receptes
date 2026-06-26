@@ -368,9 +368,10 @@
     border: 1.5px solid var(--border-dim); background: var(--surface);
     color: var(--text-dim); font-family: 'Poppins', sans-serif; font-size: 12px;
     transition: border-color 0.15s, color 0.15s;
+    position: relative; overflow: hidden;
   }
   .btn-foto:hover { border-color: var(--border); color: var(--text); }
-  .btn-foto input { display: none; }
+  .btn-foto input { position: absolute; width: 0; height: 0; opacity: 0; overflow: hidden; pointer-events: none; }
   .btn-foto i { font-size: 15px; }
   .btn-foto-treure {
     background: none; border: none; cursor: pointer;
@@ -995,7 +996,7 @@
   }
   .detall-nom {
     font-family: 'Fraunces', serif;
-    font-size: 1.6rem; font-weight: 500;
+    font-size: 1.725rem; font-weight: 500;
     color: var(--text); line-height: 1.25;
     margin: 0 0 10px;
   }
@@ -1003,6 +1004,16 @@
     display: flex; align-items: center; gap: 10px;
     flex-wrap: wrap; margin-bottom: 1.25rem;
   }
+  .btn-cuinar-detall-meta {
+    margin-left: auto;
+    background: none; border: none; cursor: pointer;
+    color: var(--text-muted); padding: 4px;
+    border-radius: 6px; transition: color 0.2s, background 0.2s;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .btn-cuinar-detall-meta svg { width: 20px; height: 20px; display: block; }
+  .btn-cuinar-detall-meta:hover { color: var(--accent); background: rgba(245,247,73,0.08); }
+  .btn-cuinar-detall-meta.actiu { background: var(--accent); color: var(--bg); }
   .detall-seccio { margin-bottom: 1.25rem; }
   .detall-seccio-label {
     font-size: 10px; font-weight: 600; text-transform: uppercase;
@@ -1047,7 +1058,7 @@
   @media (max-width: 600px) {
     .detall-hero { height: 200px; }
     .detall-contingut { padding: 1rem; }
-    .detall-nom { font-size: 1.35rem; }
+    .detall-nom { font-size: 1.475rem; }
   }
 
   /* ══════════════════════════════════════
@@ -1868,13 +1879,18 @@ function obrirDetall(nom, desDePopstate) {
         </button>
       </div>
     </div>
-    ${heroHTML}
-    <div class="detall-contingut">
+    <div class="detall-contingut" style="padding-bottom:0;">
       <div class="detall-nom">${nom}</div>
       <div class="detall-meta">
         <span class="badge-cat" style="${badgeStyle(cat)}">${cat}</span>
         <div class="card-stars">${starsHTML}</div>
+        <button class="btn-cuinar-detall-meta${ckEstat.actiu ? ' actiu' : ''}" onclick="toggleCookMode('${nomId}','${nomEsc}')" title="Mode cuinar" aria-label="Mode cuinar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 13.87A4 4 0 0 1 7.41 6a5.11 5.11 0 0 1 1.05-1.54 5 5 0 0 1 7.08 0A5.11 5.11 0 0 1 16.59 6 4 4 0 0 1 18 13.87V21H6Z"/><line x1="6" y1="17" x2="18" y2="17"/></svg>
+        </button>
       </div>
+    </div>
+    ${heroHTML}
+    <div class="detall-contingut">
       ${ingSecHTML}
       ${instrHTML}
       ${comHTML}
@@ -1906,7 +1922,7 @@ function detallEditar(nomId, nom) {
   mostrarPanell('cerca');
   history.pushState({ panell: 'cerca' }, '', '');
   if (vistaTipus === 'grid') canviarVista('llista');
-  if (!oberts.has(nom)) { oberts.add(nom); aplicarFiltre(); }
+  if (!oberts.has(nom)) { oberts.add(nom); aplicar(); }
   setTimeout(() => {
     obrirEdicio(nomId, nom);
     document.getElementById('card-' + nomId)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
