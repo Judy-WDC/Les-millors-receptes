@@ -2482,14 +2482,14 @@ function aplicar() {
                     ${foto ? `<img src="${foto}" alt="Foto de ${nom.replace(/"/g,'&quot;')}">` : `<span class="foto-preview-buida">Encara no hi ha foto</span>`}
                   </div>
                   <div class="foto-edit-accions">
-                    <label class="btn-foto">
+                    <div class="btn-foto" onclick="this.querySelector('input').click()">
                       <input type="file" accept="image/*" onchange="pujarFotoRecepta('${nomId}','${nom.replace(/'/g,"\\'").replace(/"/g,"&quot;")}', this)">
                       <i class="ti ti-photo-up" aria-hidden="true"></i> Puja una foto
-                    </label>
-                    <label class="btn-foto">
+                    </div>
+                    <div class="btn-foto" onclick="this.querySelector('input').click()">
                       <input type="file" accept="image/*" capture="environment" onchange="pujarFotoRecepta('${nomId}','${nom.replace(/'/g,"\\'").replace(/"/g,"&quot;")}', this)">
                       <i class="ti ti-camera" aria-hidden="true"></i> Fes una foto
-                    </label>
+                    </div>
                     <button type="button" class="btn-foto-treure" id="foto-treure-${nomId}" style="${foto ? '' : 'display:none'}" onclick="treureFotoRecepta('${nomId}','${nom.replace(/'/g,"\\'").replace(/"/g,"&quot;")}')">Treure</button>
                   </div>
                   <div class="foto-estat" id="foto-estat-${nomId}"></div>
