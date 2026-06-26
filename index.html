@@ -1126,8 +1126,7 @@
     display: none;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    padding: 2rem;
+    padding: 3rem 1.5rem 2rem;
     position: relative;
     overflow: hidden;
   }
@@ -1143,7 +1142,7 @@
   }
   .portada-logo {
     display: flex; align-items: center; gap: 8px;
-    margin-bottom: 2rem;
+    margin-bottom: 2.5rem;
   }
   .portada-logo-cercle {
     width: 28px; height: 28px; border-radius: 50%;
@@ -1157,17 +1156,17 @@
   .portada-h1 {
     font-family: 'Syne', sans-serif;
     font-weight: 300;
-    font-size: clamp(2rem, 8vw, 2.3rem);
-    line-height: 1.05;
+    font-size: clamp(2.3rem, 9vw, 2.8rem);
+    line-height: 1.0;
     color: var(--text);
-    margin: 0 0 1.75rem;
+    margin: 0 0 3rem;
   }
   .portada-h1 em { font-style: normal; color: var(--accent); }
   .portada-card {
     background: var(--surface);
     border: 1px solid var(--border-dim);
     border-radius: 14px;
-    margin-bottom: 12px;
+    margin-bottom: 14px;
     cursor: pointer;
     transition: border-color 0.2s;
   }
@@ -1252,8 +1251,9 @@
     font-size: 0.95rem; color: var(--text); display: block;
   }
   .portada-footer {
-    position: absolute;
-    bottom: 2rem;
+    text-align: center;
+    margin-top: auto;
+    padding-top: 2rem;
     font-size: 0.68rem;
     font-weight: 300;
     color: var(--accent2);
