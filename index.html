@@ -488,6 +488,132 @@
     display: flex; align-items: center; gap: 5px;
   }
 
+  /* ══════════════════════════════════════
+     SELECTOR DE RACIONS
+  ══════════════════════════════════════ */
+  .racions-stepper {
+    display: flex; align-items: center; gap: 12px;
+  }
+  .racions-btn {
+    width: 34px; height: 34px; border-radius: 50%;
+    border: 1.5px solid var(--border); background: var(--surface);
+    color: var(--text); font-size: 18px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Poppins', sans-serif;
+    transition: border-color 0.15s, background 0.15s;
+    flex-shrink: 0; padding: 0;
+  }
+  .racions-btn:hover { border-color: var(--accent); color: var(--accent); background: rgba(245,247,73,0.05); }
+  .racions-btn:active { transform: scale(0.94); }
+  .racions-btn:disabled { opacity: 0.35; cursor: not-allowed; pointer-events: none; }
+  .racions-valor-wrap { text-align: center; min-width: 32px; }
+  .racions-valor {
+    font-size: 20px; font-weight: 500; color: var(--text-dim);
+    line-height: 1; display: block;
+  }
+  .racions-label {
+    font-size: 11px; color: var(--text-muted);
+    letter-spacing: 0.04em; margin-top: 1px;
+  }
+  .racions-stepper.cuinant { opacity: 0.3; pointer-events: none; }
+
+  /* Píndola "Afegir racions" (estat desactivat) */
+  .racions-pindola {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: rgba(122,154,168,0.08); border-radius: 999px;
+    border: 1.5px dashed rgba(122,154,168,0.3);
+    padding: 5px 14px 5px 5px; cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+  }
+  .racions-pindola:hover { border-color: rgba(122,154,168,0.5); background: rgba(122,154,168,0.12); }
+  .racions-pindola-icon {
+    width: 24px; height: 24px; border-radius: 50%;
+    background: rgba(122,154,168,0.12);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .racions-pindola-icon i { font-size: 13px; color: var(--text-muted); }
+  .racions-pindola-text { font-size: 12px; color: var(--text-muted); }
+
+  /* Input inline per afegir racions */
+  .racions-inline-form {
+    display: none; align-items: center; gap: 10px;
+  }
+  .racions-inline-form.visible { display: flex; }
+  .racions-inline-input {
+    width: 56px; padding: 6px 8px; text-align: center;
+    border: 1.5px solid var(--accent); border-radius: 8px;
+    background: var(--surface2); color: var(--accent);
+    font-family: 'Poppins', sans-serif; font-size: 16px;
+    font-weight: 500; outline: none;
+  }
+  .racions-inline-input:focus { box-shadow: 0 0 0 2px rgba(245,247,73,0.15); }
+  .racions-inline-label { font-size: 13px; color: var(--text-dim); }
+  .racions-inline-btn {
+    padding: 6px 14px; border-radius: 8px;
+    border: 1.5px solid var(--accent); background: rgba(245,247,73,0.1);
+    color: var(--accent); font-family: 'Poppins', sans-serif;
+    font-size: 12px; font-weight: 500; cursor: pointer;
+    transition: background 0.15s;
+  }
+  .racions-inline-btn:hover { background: rgba(245,247,73,0.2); }
+
+  /* Previsualització del parser */
+  .ing-preview-overlay {
+    position: fixed; inset: 0; z-index: 500;
+    background: rgba(11,32,39,0.92); backdrop-filter: blur(6px);
+    display: flex; align-items: center; justify-content: center;
+    padding: 1rem;
+  }
+  .ing-preview-card {
+    background: var(--surface); border: 1.5px solid var(--border);
+    border-radius: 16px; padding: 1.25rem; width: 100%; max-width: 480px;
+    max-height: 85vh; overflow-y: auto;
+  }
+  .ing-preview-title {
+    font-size: 14px; font-weight: 500; color: var(--text);
+    margin-bottom: 4px;
+  }
+  .ing-preview-desc {
+    font-size: 12px; color: var(--text-muted); margin-bottom: 14px; line-height: 1.5;
+  }
+  .ing-preview-header {
+    display: flex; gap: 6px; margin-bottom: 6px; padding: 0 2px;
+  }
+  .ing-preview-header span {
+    font-size: 10px; color: var(--text-muted); text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .ing-preview-row {
+    display: flex; gap: 6px; margin-bottom: 5px;
+  }
+  .ing-preview-cell {
+    background: var(--surface2); border: 1px solid var(--border-dim);
+    border-radius: 8px; padding: 7px 8px; font-size: 13px;
+  }
+  .ing-preview-cell-q { width: 52px; text-align: center; color: var(--accent); }
+  .ing-preview-cell-u { width: 68px; text-align: center; }
+  .ing-preview-cell-n { flex: 1; color: var(--text-dim); }
+  .ing-preview-badge {
+    font-size: 10px; color: var(--text-muted); background: var(--bg);
+    padding: 2px 7px; border-radius: 999px; white-space: nowrap; margin-left: auto;
+  }
+  .ing-preview-accions {
+    display: flex; gap: 10px; margin-top: 16px;
+  }
+  .ing-preview-accions button {
+    flex: 1; padding: 10px; border-radius: 10px;
+    font-family: 'Poppins', sans-serif; font-size: 13px; cursor: pointer;
+  }
+  .ing-preview-btn-cancel {
+    border: 1.5px solid var(--border); background: transparent; color: var(--text-dim);
+  }
+  .ing-preview-btn-cancel:hover { background: var(--surface2); }
+  .ing-preview-btn-confirm {
+    border: 1.5px solid var(--accent); background: rgba(245,247,73,0.1);
+    color: var(--accent); font-weight: 500;
+  }
+  .ing-preview-btn-confirm:hover { background: rgba(245,247,73,0.18); }
+
   /* Estat buit */
   .estat {
     text-align: center; padding: 3rem 1rem;
@@ -586,17 +712,21 @@
     font-weight: 500; text-transform: uppercase;
     letter-spacing: 0.06em;
   }
-  input[type=text], select {
+  input[type=text], input[type=number], select {
     width: 100%; padding: 0.6rem 0.9rem;
     border: 1.5px solid var(--border-dim);
     border-radius: 8px; font-family: 'Poppins', sans-serif;
     font-size: 0.9rem; background: var(--bg);
     color: var(--text); transition: border-color 0.2s; appearance: none;
   }
-  input[type=text]:focus, select:focus {
+  /* Amaga les fletxetes (spinner) dels inputs numèrics */
+  input[type=number]::-webkit-inner-spin-button,
+  input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+  input[type=number] { -moz-appearance: textfield; }
+  input[type=text]:focus, input[type=number]:focus, select:focus {
     outline: none; border-color: var(--accent);
   }
-  input[type=text]::placeholder { color: var(--text-muted); }
+  input[type=text]::placeholder, input[type=number]::placeholder { color: var(--text-muted); }
   .select-wrap { position: relative; }
   .cat-nova-wrap { display: flex; flex-direction: column; gap: 6px; }
   .cat-nova-input {
@@ -702,7 +832,7 @@
   .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
   .form-group { display: flex; flex-direction: column; gap: 0.25rem; }
   .form-group.full { grid-column: 1/-1; }
-  .form-group input[type=text], .form-group select {
+  .form-group input[type=text], .form-group input[type=number], .form-group select {
     font-size: 0.82rem; padding: 0.5rem 0.8rem;
   }
   textarea {
@@ -810,6 +940,7 @@
     font-weight: 500;
   }
   .card-edit-group input[type=text],
+  .card-edit-group input[type=number],
   .card-edit-group select,
   .card-edit-group textarea {
     font-size: 0.82rem; padding: 0.45rem 0.75rem;
@@ -819,6 +950,7 @@
     transition: border-color 0.2s; width: 100%;
   }
   .card-edit-group input[type=text]:focus,
+  .card-edit-group input[type=number]:focus,
   .card-edit-group select:focus,
   .card-edit-group textarea:focus {
     outline: none; border-color: var(--accent);
@@ -1076,7 +1208,7 @@
   .btn-cuinar-detall-meta.actiu { background: var(--accent); color: var(--bg); }
   .detall-seccio { margin-bottom: 1.25rem; }
   .detall-seccio-label {
-    font-size: 10px; font-weight: 600; text-transform: uppercase;
+    font-size: 12px; font-weight: 600; text-transform: uppercase;
     letter-spacing: 0.08em; color: var(--text-muted); margin-bottom: 8px;
   }
   .detall-ing {
@@ -1714,6 +1846,12 @@
               <input type="text" id="manual-url" placeholder="https://...">
             </div>
             <div class="form-group">
+              <label>Racions *</label>
+              <input type="number" id="manual-racions" min="1" max="99" placeholder="p.ex. 4" style="width:100%">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group full">
               <label>Etiquetes</label>
               <input type="text" id="manual-etiquetes" placeholder="sopar ràpid, meal prep…">
             </div>
@@ -1754,6 +1892,224 @@ const API_PYTHON = 'http://localhost:5000';
 
 // Categories — font única de veritat; afegir aquí per reflectir-ho a tot arreu
 const CAT_OPCIONS = ['Untables', 'Untables dolços', 'Cremes', 'Currys', 'Barretes', 'Boletes energètiques', 'Altres'];
+
+// ══════════════════════════════════════════════
+// PARSER D'INGREDIENTS I ESCALAT DE RACIONS
+// ══════════════════════════════════════════════
+
+const UNIT_MAP = {
+  // Pes
+  'g':'g','gr':'g','gram':'g','grams':'g','gramo':'g','gramos':'g',
+  'kg':'kg','quilo':'kg','quilos':'kg','kilo':'kg','kilos':'kg','kilogramo':'kg','kilogramos':'kg',
+  // Volum
+  'ml':'ml','mililitre':'ml','mililitres':'ml','mililitro':'ml','mililitros':'ml',
+  'l':'l','litre':'l','litres':'l','litro':'l','litros':'l','liter':'l','liters':'l',
+  'dl':'dl','decilitre':'dl','decilitres':'dl','decilitro':'dl','decilitros':'dl',
+  'cl':'cl','centilitre':'cl','centilitres':'cl','centilitro':'cl','centilitros':'cl',
+  // Mesures de cuina
+  'cullerada':'cullerada','cullerades':'cullerada','cucharada':'cullerada','cucharadas':'cullerada',
+  'tbsp':'cullerada','tablespoon':'cullerada','tablespoons':'cullerada',
+  'culleradeta':'culleradeta','culleradetes':'culleradeta','cucharadita':'culleradeta','cucharaditas':'culleradeta',
+  'tsp':'culleradeta','teaspoon':'culleradeta','teaspoons':'culleradeta',
+  'got':'got','gots':'got','vaso':'got','vasos':'got','glass':'got','glasses':'got',
+  'tassa':'tassa','tasses':'tassa','taza':'tassa','tazas':'tassa','cup':'tassa','cups':'tassa',
+  'pessic':'pessic','pessics':'pessic','pizca':'pessic','pizcas':'pessic','pinch':'pessic','pinches':'pessic',
+  // Envasos i porcions
+  'paquet':'paquet','paquets':'paquet','paquete':'paquet','paquetes':'paquet','pack':'paquet','packs':'paquet',
+  'llauna':'llauna','llaunes':'llauna','lata':'llauna','latas':'llauna','can':'llauna','cans':'llauna',
+  'pot':'pot','pots':'pot','bote':'pot','botes':'pot','jar':'pot','jars':'pot',
+  'sobre':'sobre','sobres':'sobre','packet':'sobre','packets':'sobre',
+  'tall':'tall','talls':'tall','loncha':'tall','lonchas':'tall','slice':'tall','slices':'tall',
+  'rodanxa':'rodanxa','rodanxes':'rodanxa','rodaja':'rodanxa','rodajas':'rodanxa','round':'rodanxa','rounds':'rodanxa',
+  'bossa':'bossa','bosses':'bossa','bolsa':'bossa','bolsas':'bossa','bag':'bossa','bags':'bossa',
+  'rajola':'rajola','rajoles':'rajola','tableta':'rajola','tabletas':'rajola','bar':'rajola','bars':'rajola',
+};
+
+const FRACTION_WORDS_RE = /^(mig|mitja|medio|media|half)\b/i;
+
+function parseFractionStr(s) {
+  s = s.trim();
+  // "1/2", "3/4", etc.
+  const fracMatch = s.match(/^(\d+)\s*\/\s*(\d+)$/);
+  if (fracMatch) return parseInt(fracMatch[1]) / parseInt(fracMatch[2]);
+  // "1 1/2" mixed fraction
+  const mixedMatch = s.match(/^(\d+)\s+(\d+)\s*\/\s*(\d+)$/);
+  if (mixedMatch) return parseInt(mixedMatch[1]) + parseInt(mixedMatch[2]) / parseInt(mixedMatch[3]);
+  const num = parseFloat(s.replace(',', '.'));
+  return isNaN(num) ? null : num;
+}
+
+function parseIngredientLine(text) {
+  text = text.trim();
+  if (!text) return null;
+
+  let q = null;
+  let u = '';
+  let n = text;
+
+  // Detecta "mig/mitja/medio/media/half" al principi
+  const wordMatch = text.match(FRACTION_WORDS_RE);
+  if (wordMatch) {
+    q = 0.5;
+    const rest = text.slice(wordMatch[0].length).trim();
+    // Comprova si segueix una unitat
+    const words = rest.split(/\s+/);
+    const unitCandidate = words[0]?.toLowerCase();
+    if (unitCandidate && UNIT_MAP[unitCandidate]) {
+      u = UNIT_MAP[unitCandidate];
+      n = words.slice(1).join(' ');
+    } else {
+      n = rest;
+    }
+    // Elimina "de/d'" inicial del nom
+    n = n.replace(/^d[e']\s*/i, '').trim();
+    return { q, u, n: n || text };
+  }
+
+  // Detecta número al principi (enter, decimal, fracció, mixt)
+  const numMatch = text.match(/^(\d+\s+\d+\s*\/\s*\d+|\d+\s*\/\s*\d+|\d+[.,]\d+|\d+)/);
+  if (numMatch) {
+    q = parseFractionStr(numMatch[1]);
+    let rest = text.slice(numMatch[0].length).trim();
+
+    // Detecta "i mig/y medio/and a half" després del número
+    const halfSuffix = rest.match(/^(i\s+mig|i\s+mitja|y\s+medio|y\s+media|and\s+a\s+half)\b/i);
+    if (halfSuffix && q !== null) {
+      q += 0.5;
+      rest = rest.slice(halfSuffix[0].length).trim();
+    }
+
+    // Comprova si segueix una unitat
+    const words = rest.split(/\s+/);
+    const unitCandidate = words[0]?.toLowerCase();
+    if (unitCandidate && UNIT_MAP[unitCandidate]) {
+      u = UNIT_MAP[unitCandidate];
+      n = words.slice(1).join(' ');
+    } else {
+      n = rest;
+    }
+    // Elimina "de/d'" inicial del nom
+    n = n.replace(/^d[e']\s*/i, '').trim();
+    return { q, u, n: n || text };
+  }
+
+  // Sense número: ingredient sense quantitat
+  return { q: null, u: '', n: text };
+}
+
+function parseAllIngredients(rawText) {
+  // Accepta text separat per salts de línia o per ' · '
+  const lines = rawText.includes(' · ')
+    ? rawText.split(' · ')
+    : rawText.split('\n');
+  return lines
+    .map(l => l.trim())
+    .filter(Boolean)
+    .map(l => parseIngredientLine(l))
+    .filter(Boolean);
+}
+
+// Recupera ingredients parsejats d'una recepta (suporta JSON i text legacy)
+function getIngredientsParsed(r) {
+  const raw = r['Ingredients'] || '';
+  if (!raw) return [];
+  // Format nou: JSON array
+  if (raw.trim().startsWith('[')) {
+    try { return JSON.parse(raw); } catch(e) { /* fallback a text */ }
+  }
+  // Format legacy: text separat per ' · '
+  return parseAllIngredients(raw);
+}
+
+function formatQuantity(num) {
+  if (num === null || num === undefined) return '';
+  if (num === 0) return '0';
+
+  const enters = Math.floor(num);
+  const decimal = num - enters;
+
+  const fraccions = [
+    { val: 0, sym: '' },
+    { val: 0.125, sym: '⅛' },
+    { val: 0.25, sym: '¼' },
+    { val: 1/3, sym: '⅓' },
+    { val: 0.5, sym: '½' },
+    { val: 2/3, sym: '⅔' },
+    { val: 0.75, sym: '¾' },
+  ];
+
+  // Troba la fracció més propera
+  let bestFrac = fraccions[0];
+  let bestDist = Math.abs(decimal);
+  for (const f of fraccions) {
+    const dist = Math.abs(decimal - f.val);
+    if (dist < bestDist) { bestDist = dist; bestFrac = f; }
+  }
+
+  // Si la distància és massa gran (>0.04), mostra decimal arrodonit
+  if (bestDist > 0.04) {
+    return num.toLocaleString('ca-ES', { maximumFractionDigits: 1 });
+  }
+
+  if (bestFrac.val === 0) return String(enters);
+  if (enters === 0) return bestFrac.sym;
+  return enters + ' ' + bestFrac.sym;
+}
+
+function renderScaledIngredient(ing, factor) {
+  if (ing.q === null) return ing.n;
+  const scaled = ing.q * factor;
+  const qStr = formatQuantity(scaled);
+  const parts = [qStr];
+  if (ing.u) parts.push(ing.u);
+  if (ing.n) parts.push(ing.n);
+  return parts.join(' ');
+}
+
+// Construeix el HTML de la previsualització del parser
+function buildIngPreviewHTML(parsed, onCancel, onConfirm) {
+  const rows = parsed.map((ing, i) => {
+    const qVal = ing.q !== null ? ing.q : '';
+    const uVal = ing.u || '';
+    const nVal = ing.n || '';
+    const noEscala = ing.q === null;
+    return `<div class="ing-preview-row">
+      <div class="ing-preview-cell ing-preview-cell-q">${qVal !== '' ? qVal : '—'}</div>
+      <div class="ing-preview-cell ing-preview-cell-u${!uVal ? ' buit' : ''}" style="${uVal ? 'color:var(--accent);border-color:rgba(245,247,73,0.25)' : 'color:var(--text-muted)'}">${uVal || '—'}</div>
+      <div class="ing-preview-cell ing-preview-cell-n" style="display:flex;align-items:center;gap:6px;">
+        <span>${nVal}</span>
+        ${noEscala ? '<span class="ing-preview-badge">no escala</span>' : ''}
+      </div>
+    </div>`;
+  }).join('');
+
+  return `<div class="ing-preview-overlay" id="ing-preview-overlay">
+    <div class="ing-preview-card">
+      <div class="ing-preview-title">Revisa els ingredients</div>
+      <div class="ing-preview-desc">Comprova que les quantitats i unitats s'hagin detectat bé. Si no, torna enrere i ajusta el text.</div>
+      <div class="ing-preview-header">
+        <span style="width:52px;text-align:center;">Quant.</span>
+        <span style="width:68px;text-align:center;">Unitat</span>
+        <span style="flex:1;">Ingredient</span>
+      </div>
+      ${rows}
+      <div class="ing-preview-accions">
+        <button class="ing-preview-btn-cancel" onclick="${onCancel}">Tornar a editar</button>
+        <button class="ing-preview-btn-confirm" onclick="${onConfirm}">Confirmar i desar</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function tancarPreviewIng() {
+  const el = document.getElementById('ing-preview-overlay');
+  if (el) el.remove();
+}
+
+// Serialitza ingredients parsejats a JSON per guardar
+function serializeIngredients(parsed) {
+  return JSON.stringify(parsed.map(ing => ({ q: ing.q, u: ing.u, n: ing.n })));
+}
 
 // Omple el selector de categoria per defecte del panell de scan
 document.addEventListener('DOMContentLoaded', () => {
@@ -1859,6 +2215,9 @@ function obrirDetall(nom, desDePopstate) {
   const r = receptes.find(x => x['Nom de la recepta'] === nom);
   if (!r) return;
 
+  // Reinicia les racions al valor original cada cop que s'obre el detall
+  delete racionsActual[nom];
+
   const cat        = r['Categoria'] || '';
   const ing        = r['Ingredients'] || '';
   const font       = r['Font'] || '';
@@ -1879,15 +2238,44 @@ function obrirDetall(nom, desDePopstate) {
     ? `<img class="detall-hero" src="${foto}" alt="${nom.replace(/"/g,'&quot;')}">`
     : `<div class="detall-hero-placeholder"><i class="ti ti-tools-kitchen-2" aria-hidden="true"></i></div>`;
 
-  const ingArr = ing ? ing.split(' · ').map(s => s.trim()).filter(Boolean) : [];
+  const ingParsed = getIngredientsParsed(r);
+  const racionsBase = parseInt(r['Racions']) || 0;
   const ckEstat = cookState[nom] || { actiu: false, marcats: new Set() };
-  const ckTotal = ingArr.length;
-  const ckFets = ingArr.filter((_, i) => ckEstat.marcats.has(i)).length;
+  const ckTotal = ingParsed.length;
+  const ckFets = ingParsed.filter((_, i) => ckEstat.marcats.has(i)).length;
   const ckPct = ckTotal ? Math.round(ckFets / ckTotal * 100) : 0;
   const ckSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>`;
 
+  // Stepper o píndola segons si la recepta té racions definides
+  let racionsHTML = '';
+  if (racionsBase > 0) {
+    racionsHTML = `<div class="racions-stepper${ckEstat.actiu ? ' cuinant' : ''}" id="det-racions-stepper-${nomId}">
+      <button class="racions-btn" onclick="canviarRacions('${nomId}','${nomEsc}',-1)" aria-label="Menys racions">−</button>
+      <div class="racions-valor-wrap">
+        <span class="racions-valor" id="det-racions-val-${nomId}" onclick="editarRacionsInline('${nomId}','${nomEsc}')">${racionsBase}</span>
+        <div class="racions-label">racions</div>
+      </div>
+      <button class="racions-btn" onclick="canviarRacions('${nomId}','${nomEsc}',1)" aria-label="Més racions">+</button>
+    </div>`;
+  } else {
+    racionsHTML = `<div id="det-racions-wrap-${nomId}">
+      <div class="racions-pindola" id="det-racions-pindola-${nomId}" onclick="mostrarInlineRacions('${nomId}','${nomEsc}')">
+        <div class="racions-pindola-icon"><i class="ti ti-plus" aria-hidden="true"></i></div>
+        <span class="racions-pindola-text">Afegir racions</span>
+      </div>
+      <div class="racions-inline-form" id="det-racions-form-${nomId}">
+        <input type="number" class="racions-inline-input" id="det-racions-input-${nomId}" min="1" max="99" placeholder="4">
+        <span class="racions-inline-label">racions</span>
+        <button class="racions-inline-btn" onclick="desarRacionsInline('${nomId}','${nomEsc}')">Desar</button>
+      </div>
+    </div>`;
+  }
+
   const ingSecHTML = ckTotal ? `<div class="detall-seccio">
-    <div class="detall-seccio-label">Ingredients</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+      <div class="detall-seccio-label" style="margin-bottom:0;">Ingredients</div>
+      ${racionsHTML}
+    </div>
     <div class="ck-progress" id="det-ck-prog-wrap-${nomId}" style="${ckEstat.actiu ? '' : 'display:none'}">
       <div class="ck-progress-top">
         <span class="ck-progress-text"><span id="det-ck-prog-${nomId}">${ckFets}</span>/${ckTotal} marcats</span>
@@ -1896,9 +2284,10 @@ function obrirDetall(nom, desDePopstate) {
       <div class="ck-bar-track"><div class="ck-bar" id="det-ck-bar-${nomId}" style="width:${ckPct}%"></div></div>
     </div>
     <div class="ck-list${ckEstat.actiu ? ' cuinant' : ''}" id="det-ck-list-${nomId}">
-      ${ingArr.map((item, idx) => {
+      ${ingParsed.map((ing, idx) => {
         const fet = ckEstat.marcats.has(idx) ? ' fet' : '';
-        const safe = item.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        const text = renderScaledIngredient(ing, 1);
+        const safe = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
         return `<div class="ck-ing${fet}" id="det-ck-ing-${nomId}-${idx}" onclick="toggleIngredient('${nomId}','${nomEsc}',${idx})">
           <span class="ck-circle">${ckSvg}</span>
           <span class="ck-txt">${safe}</span>
@@ -2287,6 +2676,10 @@ function toggleCookMode(nomId, nom) {
   if (detLlista)  detLlista.classList.toggle('cuinant', estat.actiu);
   if (detProgWrap) detProgWrap.style.display = estat.actiu ? '' : 'none';
 
+  // Desactiva/activa el stepper de racions
+  const detStepper = document.getElementById('det-racions-stepper-' + nomId);
+  if (detStepper) detStepper.classList.toggle('cuinant', estat.actiu);
+
   if (!estat.actiu) {
     const detPanell = document.getElementById('panell-detall');
     if (detPanell) detPanell.querySelectorAll('.ck-ing.fet').forEach(el => el.classList.remove('fet'));
@@ -2372,6 +2765,129 @@ document.addEventListener('visibilitychange', () => {
     gestionarWakeLock();
   }
 });
+
+// ══════════════════════════════════════════════
+// SELECTOR DE RACIONS — interacció
+// ══════════════════════════════════════════════
+
+// Estat temporal de racions per recepta (es reinicia en sortir del detall)
+const racionsActual = {};
+
+function getRacionsActual(nom) {
+  const r = receptes.find(x => x['Nom de la recepta'] === nom);
+  if (!r) return 1;
+  const base = parseInt(r['Racions']) || 0;
+  if (!base) return 0;
+  return racionsActual[nom] || base;
+}
+
+function canviarRacions(nomId, nom, delta) {
+  const r = receptes.find(x => x['Nom de la recepta'] === nom);
+  if (!r) return;
+  const base = parseInt(r['Racions']) || 1;
+  const actual = racionsActual[nom] || base;
+  const nou = Math.max(1, Math.min(99, actual + delta));
+  racionsActual[nom] = nou;
+
+  // Actualitza el display del valor
+  const valEl = document.getElementById('det-racions-val-' + nomId);
+  if (valEl) valEl.textContent = nou;
+
+  // Recalcula i repinta els ingredients
+  const factor = nou / base;
+  const ingParsed = getIngredientsParsed(r);
+  const listEl = document.getElementById('det-ck-list-' + nomId);
+  if (listEl) {
+    const ckEstat = cookState[nom] || { actiu: false, marcats: new Set() };
+    listEl.querySelectorAll('.ck-ing').forEach((el, idx) => {
+      if (idx < ingParsed.length) {
+        const txt = renderScaledIngredient(ingParsed[idx], factor);
+        const safe = txt.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        const txtEl = el.querySelector('.ck-txt');
+        if (txtEl) txtEl.innerHTML = safe;
+      }
+    });
+  }
+}
+
+function editarRacionsInline(nomId, nom) {
+  const valEl = document.getElementById('det-racions-val-' + nomId);
+  if (!valEl) return;
+  const actual = parseInt(valEl.textContent) || 4;
+  const input = document.createElement('input');
+  input.type = 'number'; input.min = '1'; input.max = '99';
+  input.value = actual;
+  input.className = 'racions-valor-input';
+  input.style.cssText = 'font-size:20px;font-weight:500;color:var(--text-dim);background:var(--surface2);border:1.5px solid var(--border);border-radius:8px;text-align:center;width:48px;font-family:Poppins,sans-serif;padding:2px 4px;outline:none;';
+
+  const parent = valEl.parentNode;
+  parent.replaceChild(input, valEl);
+  input.focus();
+  input.select();
+
+  const confirmar = () => {
+    const nou = Math.max(1, Math.min(99, parseInt(input.value) || actual));
+    const span = document.createElement('span');
+    span.className = 'racions-valor';
+    span.id = 'det-racions-val-' + nomId;
+    span.textContent = nou;
+    span.onclick = () => editarRacionsInline(nomId, nom);
+    parent.replaceChild(span, input);
+
+    racionsActual[nom] = nou;
+    const r = receptes.find(x => x['Nom de la recepta'] === nom);
+    const base = parseInt(r?.['Racions']) || 1;
+    const factor = nou / base;
+    const ingParsed = getIngredientsParsed(r);
+    const listEl = document.getElementById('det-ck-list-' + nomId);
+    if (listEl) {
+      listEl.querySelectorAll('.ck-ing').forEach((el, idx) => {
+        if (idx < ingParsed.length) {
+          const txt = renderScaledIngredient(ingParsed[idx], factor);
+          const safe = txt.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+          const txtEl = el.querySelector('.ck-txt');
+          if (txtEl) txtEl.innerHTML = safe;
+        }
+      });
+    }
+  };
+
+  input.addEventListener('blur', confirmar);
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); input.blur(); }
+    if (e.key === 'Escape') { input.value = actual; input.blur(); }
+  });
+}
+
+function mostrarInlineRacions(nomId, nom) {
+  const pindola = document.getElementById('det-racions-pindola-' + nomId);
+  const form = document.getElementById('det-racions-form-' + nomId);
+  if (pindola) pindola.style.display = 'none';
+  if (form) {
+    form.classList.add('visible');
+    const input = document.getElementById('det-racions-input-' + nomId);
+    if (input) { input.focus(); }
+  }
+}
+
+async function desarRacionsInline(nomId, nom) {
+  const input = document.getElementById('det-racions-input-' + nomId);
+  const val = parseInt(input?.value);
+  if (!val || val < 1) { mostrarToast('⚠️ Indica un número vàlid de racions'); return; }
+
+  // Actualitza localment
+  const idx = receptes.findIndex(x => x['Nom de la recepta'] === nom);
+  if (idx !== -1) receptes[idx]['Racions'] = String(val);
+
+  // Desa a Google Sheets
+  const params = new URLSearchParams({ accio: 'actualitzarRacions', nom, racions: val });
+  await fetch(`${SHEETS_URL}?${params.toString()}`, { mode: 'no-cors' });
+
+  mostrarToast(`✅ Racions definides: ${val}`);
+
+  // Reobre el detall per repintar amb el stepper actiu
+  obrirDetall(nom, true);
+}
 
 function resetSorpren() {
   receptaSorpresa = null;
@@ -2497,7 +3013,8 @@ function aplicar() {
             </div>
             ${foto ? `<img class="card-foto-float" src="${foto}" alt="" loading="lazy">` : ''}
             ${(() => {
-              const ingArr = ing.split(' · ').map(s => s.trim()).filter(Boolean);
+              const ingParsedCard = getIngredientsParsed(r);
+              const ingArr = ingParsedCard.map(i => renderScaledIngredient(i, 1));
               const estat = cookState[nom] || { actiu: false, marcats: new Set() };
               const total = ingArr.length;
               const fets = ingArr.filter((_, i) => estat.marcats.has(i)).length;
@@ -2564,11 +3081,21 @@ function aplicar() {
               </div>
               <div class="card-edit-group full">
                 <span class="card-edit-label">Ingredients</span>
-                <textarea id="edit-ing-${nomId}">${ing.split(' · ').join('\n')}</textarea>
+                <textarea id="edit-ing-${nomId}">${(() => {
+                  const parsed = getIngredientsParsed(r);
+                  if (parsed.length) return parsed.map(i => renderScaledIngredient(i, 1)).join('\n');
+                  return ing.split(' · ').join('\n');
+                })()}</textarea>
               </div>
-              <div class="card-edit-group full">
-                <span class="card-edit-label">Font</span>
-                <input type="text" id="edit-font-${nomId}" value="${font.replace(/"/g,'&quot;')}">
+              <div class="card-edit-row">
+                <div class="card-edit-group">
+                  <span class="card-edit-label">Racions</span>
+                  <input type="number" id="edit-racions-${nomId}" min="1" max="99" value="${r['Racions'] || ''}" placeholder="p.ex. 4" style="width:100%">
+                </div>
+                <div class="card-edit-group">
+                  <span class="card-edit-label">Font</span>
+                  <input type="text" id="edit-font-${nomId}" value="${font.replace(/"/g,'&quot;')}">
+                </div>
               </div>
               <div class="card-edit-group full">
                 <span class="card-edit-label">URL</span>
@@ -2699,28 +3226,44 @@ async function eliminarRecepta(nomId, nomOriginal) {
 }
 
 async function desarEdicio(nomId, nomOriginal) {
+  const ingRaw  = document.getElementById('edit-ing-' + nomId).value.trim();
+  if (!ingRaw) { confirmarDesarEdicio(nomId, nomOriginal, '[]'); return; }
+
+  const parsed = parseAllIngredients(ingRaw);
+  const ingJSON = serializeIngredients(parsed);
+
+  // Mostra la previsualització
+  const html = buildIngPreviewHTML(
+    parsed,
+    `tancarPreviewIng()`,
+    `tancarPreviewIng(); confirmarDesarEdicio('${nomId}','${nomOriginal.replace(/'/g,"\\'")}', window._ingPreviewJSON)`
+  );
+  window._ingPreviewJSON = ingJSON;
+  document.body.insertAdjacentHTML('beforeend', html);
+}
+
+async function confirmarDesarEdicio(nomId, nomOriginal, ingJSON) {
+  if (!ingJSON && window._ingPreviewJSON) ingJSON = window._ingPreviewJSON;
+
   const btn = document.getElementById('edit-btn-' + nomId);
   btn.disabled = true;
   btn.textContent = 'Desant…';
 
   const nomNou  = document.getElementById('edit-nom-' + nomId).value.trim();
   const cat     = document.getElementById('edit-cat-' + nomId).value;
-  const ingRaw  = document.getElementById('edit-ing-' + nomId).value.trim();
   const font    = document.getElementById('edit-font-' + nomId).value.trim();
   const url     = document.getElementById('edit-url-' + nomId).value.trim();
   const etiquetes = normalitzarEtiquetes(document.getElementById('edit-etiquetes-' + nomId).value);
   const instruccions = document.getElementById('edit-instruccions-' + nomId).value.trim();
   const comentaris = document.getElementById('edit-comentaris-' + nomId).value.trim();
-
-  // Normalitzem els ingredients: salts de línia → separador ' · '
-  const ing = ingRaw.split('\n').map(l => l.trim()).filter(Boolean).join(' · ');
+  const racions = document.getElementById('edit-racions-' + nomId)?.value || '';
 
   const params = new URLSearchParams({
     accio:        'editar',
     nomOriginal:  nomOriginal,
     nom:          nomNou,
     categoria:    cat,
-    ingredients:  ing,
+    ingredients:  ingJSON || '[]',
     font:         font,
     url:          url,
     foto:         receptes.find(r => r['Nom de la recepta'] === nomOriginal)?.['Foto'] || '',
@@ -2728,12 +3271,10 @@ async function desarEdicio(nomId, nomOriginal) {
     instruccions: instruccions,
     comentaris:   comentaris,
     valoracio:    receptes.find(r => r['Nom de la recepta'] === nomOriginal)?.['Valoracio'] || '',
+    racions:      racions,
   });
 
   try {
-    // Nota: mode:'no-cors' fa la resposta opaca — el fetch mai llançarà error
-    // de xarxa capturable, així que el catch gairebé mai s'activarà.
-    // Si el GSheets falla silenciosament, el toast d'èxit es mostrarà igualment.
     await fetch(`${SHEETS_URL}?${params.toString()}`, { mode: 'no-cors' });
     mostrarToast(`✅ "${nomNou}" actualitzada al receptari`);
 
@@ -2745,12 +3286,13 @@ async function desarEdicio(nomId, nomOriginal) {
     if (idx !== -1) {
       receptes[idx]['Nom de la recepta'] = nomNou;
       receptes[idx]['Categoria']         = cat;
-      receptes[idx]['Ingredients']       = ing;
+      receptes[idx]['Ingredients']       = ingJSON || '[]';
       receptes[idx]['Font']              = font;
       receptes[idx]['URL']               = url;
       receptes[idx]['Etiquetes']         = etiquetes;
       receptes[idx]['Instruccions']      = instruccions;
       receptes[idx]['Comentaris']        = comentaris;
+      if (racions) receptes[idx]['Racions'] = racions;
     }
 
     // Actualitzem el nom al Set d'oberts si ha canviat
@@ -2761,6 +3303,7 @@ async function desarEdicio(nomId, nomOriginal) {
 
     // El mode cuinar es reinicia en editar (els ingredients poden haver canviat)
     delete cookState[nomOriginal];
+    delete racionsActual[nomOriginal];
     cuinantActius.delete(nomOriginal);
     gestionarWakeLock();
 
@@ -2803,6 +3346,7 @@ async function valorar(nom, nova) {
     etiquetes:    r['Etiquetes']         || '',
     instruccions: r['Instruccions']      || '',
     valoracio:    String(valoracio),
+    racions:      r['Racions']           || '',
   });
   await fetch(`${SHEETS_URL}?${params.toString()}`, { mode: 'no-cors' });
   const estrella = valoracio > 0 ? ' ' + '★'.repeat(valoracio) : '';
@@ -3425,6 +3969,7 @@ async function desarAGoogleSheets(recepta) {
     instruccions: recepta.instruccions || '',
     comentaris:   recepta.comentaris   || '',
     valoracio:    '',
+    racions:      recepta.racions      || '',
   });
   await fetch(`${SHEETS_URL}?${params.toString()}`, { mode: 'no-cors' });
 }
@@ -3435,10 +3980,14 @@ async function desarRecepta(idx) {
 
   let fontValue = normalitzarFont(document.getElementById(`font-${idx}`).value.trim());
 
+  const ingRawScan = document.getElementById(`ing-${idx}`).value.trim();
+  const ingParsedScan = parseAllIngredients(ingRawScan);
+  const ingJSONScan = ingParsedScan.length ? serializeIngredients(ingParsedScan) : ingRawScan;
+
   const recepta = {
     nom:          document.getElementById(`nom-${idx}`).value.trim(),
     categoria:    document.getElementById(`cat-${idx}`).value,
-    ingredients:  document.getElementById(`ing-${idx}`).value.trim(),
+    ingredients:  ingJSONScan,
     font:         fontValue,
     etiquetes:    normalitzarEtiquetes(document.getElementById(`etiquetes-${idx}`)?.value || ''),
     instruccions: document.getElementById(`instruccions-${idx}`)?.value.trim() || '',
@@ -3512,11 +4061,11 @@ btnExportar.addEventListener('click', () => {
   if (!llista.length) return;
   const wb   = XLSX.utils.book_new();
   const data = [
-    ['Nom de la recepta', 'Categoria', 'Ingredients', 'Font', 'URL', 'Foto', 'Etiquetes', 'Instruccions', 'Valoracio'],
-    ...llista.map(r => [r.nom, r.categoria, r.ingredients, r.font, r.url, r.foto, r.etiquetes, r.instruccions, r.valoracio])
+    ['Nom de la recepta', 'Categoria', 'Ingredients', 'Font', 'URL', 'Foto', 'Etiquetes', 'Instruccions', 'Valoracio', 'Racions'],
+    ...llista.map(r => [r.nom, r.categoria, r.ingredients, r.font, r.url, r.foto, r.etiquetes, r.instruccions, r.valoracio, r.racions || ''])
   ];
   const ws = XLSX.utils.aoa_to_sheet(data);
-  ws['!cols'] = [{ wch: 28 }, { wch: 20 }, { wch: 60 }, { wch: 22 }, { wch: 30 }, { wch: 10 }, { wch: 25 }, { wch: 60 }, { wch: 10 }];
+  ws['!cols'] = [{ wch: 28 }, { wch: 20 }, { wch: 60 }, { wch: 22 }, { wch: 30 }, { wch: 10 }, { wch: 25 }, { wch: 60 }, { wch: 10 }, { wch: 10 }];
   XLSX.utils.book_append_sheet(wb, ws, 'Receptes');
   XLSX.writeFile(wb, 'receptes.xlsx');
 });
@@ -3569,21 +4118,51 @@ async function desarManual() {
     nomEl.focus();
     return;
   }
+
+  const racionsEl = document.getElementById('manual-racions');
+  const racions = parseInt(racionsEl?.value);
+  if (!racions || racions < 1) {
+    errEl.textContent = "Indica el número de racions d'aquesta recepta";
+    errEl.style.display = 'block';
+    racionsEl.style.borderColor = '#E57373';
+    racionsEl.focus();
+    return;
+  }
+
   errEl.style.display = 'none';
   nomEl.style.borderColor = '';
+  racionsEl.style.borderColor = '';
 
-  const ingRaw       = document.getElementById('manual-ing').value.trim();
+  const ingRaw = document.getElementById('manual-ing').value.trim();
+  if (ingRaw) {
+    const parsed = parseAllIngredients(ingRaw);
+    const ingJSON = serializeIngredients(parsed);
+    const html = buildIngPreviewHTML(
+      parsed,
+      `tancarPreviewIng()`,
+      `tancarPreviewIng(); confirmarDesarManual()`
+    );
+    window._manualIngJSON = ingJSON;
+    document.body.insertAdjacentHTML('beforeend', html);
+  } else {
+    window._manualIngJSON = '[]';
+    confirmarDesarManual();
+  }
+}
+
+async function confirmarDesarManual() {
+  const nom = document.getElementById('manual-nom').value.trim();
   const instruccions = document.getElementById('manual-instruccions').value.trim();
-  const ing          = ingRaw.split('\n').map(function(l){ return l.trim(); }).filter(Boolean).join(' · ');
 
   const recepta = {
     nom:          nom,
     categoria:    document.getElementById('manual-cat').value,
-    ingredients:  ing,
+    ingredients:  window._manualIngJSON || '[]',
     font:         normalitzarFont(document.getElementById('manual-font').value.trim()),
     url:          document.getElementById('manual-url').value.trim(),
     etiquetes:    normalitzarEtiquetes(document.getElementById('manual-etiquetes').value),
     instruccions: instruccions,
+    racions:      document.getElementById('manual-racions').value || '',
   };
 
   const btn = document.querySelector('#formManualWrap .btn-desar');
@@ -3601,6 +4180,7 @@ async function desarManual() {
     document.getElementById('manual-ing').value = '';
     document.getElementById('manual-instruccions').value = '';
     document.getElementById('manual-cat').value = '';
+    document.getElementById('manual-racions').value = '';
 
     // Tanca i refresca
     toggleFormManual();
