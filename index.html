@@ -381,6 +381,35 @@
   .btn-foto-treure:hover { color: var(--text-dim); }
   .foto-estat { font-size: 11px; color: var(--text-muted); min-height: 14px; }
 
+  /* ── Visor de càmera ── */
+  .camera-overlay {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: #000; z-index: 9999;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+  }
+  .camera-overlay video {
+    width: 100%; height: 100%; object-fit: cover;
+  }
+  .camera-controls {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    padding: 1.5rem 1rem 2.5rem;
+    display: flex; align-items: center; justify-content: center; gap: 2rem;
+    background: linear-gradient(transparent, rgba(0,0,0,0.7));
+  }
+  .camera-btn-capture {
+    width: 64px; height: 64px; border-radius: 50%;
+    background: #fff; border: 4px solid rgba(255,255,255,0.5);
+    cursor: pointer; transition: transform 0.1s;
+    flex-shrink: 0;
+  }
+  .camera-btn-capture:active { transform: scale(0.9); }
+  .camera-btn-close, .camera-btn-flip {
+    background: rgba(255,255,255,0.15); border: none; cursor: pointer;
+    color: #fff; width: 44px; height: 44px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; backdrop-filter: blur(4px);
+  }
+
   /* ── Mode cuinar ── */
   .btn-cuinar {
     background: transparent; border: none; cursor: pointer;
@@ -1076,55 +1105,63 @@
      PANELL SCAN — TEMA CLAR
   ══════════════════════════════════════ */
   #panell-scan {
-    --bg:          #F0ECF7;
-    --surface:     #ffffff;
-    --surface2:    #D4E6DA;
-    --border:      #C8BFB4;
-    --border-dim:  #E8E2DA;
-    --text:        #1A1612;
-    --text-dim:    #6B4E3D;
-    --text-muted:  #9A9088;
-    --accent:      #C1714F;
-    --accent2:     #C1714F;
+    --bg:          #163d4c;
+    --surface:     #22596b;
+    --surface2:    #1b4a5a;
+    --border:      #40798C;
+    --border-dim:  rgba(255,255,255,0.1);
+    --text:        #F6F5AE;
+    --text-dim:    #d4e8ee;
+    --text-muted:  #92b5c2;
+    --accent:      #F5F749;
+    --accent2:     #a8d4e0;
     --verd:        #3D6B4F;
-    --verd-clar:   #D4E6DA;
-    --error:       #C62828;
-    --error-bg:    #FFEBEE;
-    --warn-bg:     #FFF3E0;
-    --warn-border: #FFCC80;
-    --warn-text:   #7B4F00;
-    background: var(--bg);
+    --verd-clar:   #1a3d2a;
+    --error:       #8B2020;
+    --error-bg:    #2a0a0a;
+    --warn-bg:     rgba(139,96,0,0.2);
+    --warn-border: rgba(139,96,0,0.4);
+    --warn-text:   #E8C87A;
+    background: #0B2027;
     color: var(--text);
     font-family: 'DM Sans', 'Poppins', sans-serif;
   }
 
-  #panell-scan .col-header h3 { font-family: 'Poppins', sans-serif; }
-  #panell-scan .badge.pendent    { background: #FFF3E0; color: #E65100; }
-  #panell-scan .badge.processant { background: #D4E6DA; color: #3D6B4F; }
-  #panell-scan .badge.fet        { background: #E8F5E9; color: #2E7D32; }
-  #panell-scan .badge.desat      { background: #E8F5E9; color: #1B5E20; }
-  #panell-scan .badge.error      { background: #FFEBEE; color: #C62828; }
+  #panell-scan .col-header {
+    background: #2e7085;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+  #panell-scan .col-header h3 { font-family: 'Poppins', sans-serif; color: #F6F5AE; }
+  #panell-scan .col-header p { color: #b8dce8; }
+  #panell-scan .col-header svg { color: #b8dce8; }
+
+  #panell-scan .badge.pendent    { background: rgba(139,96,0,0.3); color: #E8C87A; }
+  #panell-scan .badge.processant { background: rgba(34,89,107,0.5); color: #a8d4e0; }
+  #panell-scan .badge.fet        { background: rgba(61,107,79,0.35); color: #8fd4a8; }
+  #panell-scan .badge.desat      { background: rgba(61,107,79,0.35); color: #6fbf8a; }
+  #panell-scan .badge.error      { background: rgba(139,32,32,0.3); color: #e68080; }
 
   #panell-scan .btn-eliminar {
-    color: #C1714F; border-color: #C1714F;
+    color: #e68080; border-color: #8B3030;
   }
-  #panell-scan .btn-eliminar:hover { background: #C1714F; color: white; }
+  #panell-scan .btn-eliminar:hover { background: #8B3030; color: white; }
 
-  #panell-scan .btn-desar:disabled { background: #B0C4B8; color: white; }
-  #panell-scan .btn-primary:disabled { background: #B0C4B8; color: white; }
+  #panell-scan .btn-desar:disabled { background: #1e3a28; color: #4a7a5a; }
+  #panell-scan .btn-primary:disabled { background: #1e3a28; color: #4a7a5a; }
 
   #panell-scan .btn-secondary {
-    color: #C1714F; border-color: #C1714F; background: white;
+    color: #d4e8ee; border-color: rgba(255,255,255,0.2); background: transparent;
   }
-  #panell-scan .btn-secondary:hover { background: #FFF0EB; }
+  #panell-scan .btn-secondary:hover { background: rgba(255,255,255,0.06); }
 
   #panell-scan #toast {
-    background: #1A1612; color: #ffffff; border: none;
+    background: #112830; color: #F6F5AE; border: 1px solid rgba(255,255,255,0.1);
   }
 
-  #panell-scan .col-body { box-shadow: 0 2px 16px rgba(0,0,0,0.06); border: none; border-top: none; }
-  #panell-scan .targeta { box-shadow: 0 1px 8px rgba(0,0,0,0.05); border-color: #EDE8E2; }
-  #panell-scan .chip { background: #ffffff; border-color: #E0D8F0; }
+  #panell-scan .col-body { box-shadow: 0 2px 16px rgba(0,0,0,0.25); border: none; border-top: none; }
+  #panell-scan .targeta { box-shadow: none; border-color: rgba(255,255,255,0.08); }
+  #panell-scan .chip { background: #163d4c; border-color: rgba(255,255,255,0.1); }
+  #panell-scan .drop-zone { background: rgba(22,61,76,0.6); }
 
   /* ══════════════════════════════════════
      PORTADA
@@ -2486,8 +2523,7 @@ function aplicar() {
                       <input type="file" accept="image/*" onchange="pujarFotoRecepta('${nomId}','${nom.replace(/'/g,"\\'").replace(/"/g,"&quot;")}', this)">
                       <i class="ti ti-photo-up" aria-hidden="true"></i> Puja una foto
                     </div>
-                    <div class="btn-foto" onclick="this.querySelector('input').click()">
-                      <input type="file" accept="image/*" capture="environment" onchange="pujarFotoRecepta('${nomId}','${nom.replace(/'/g,"\\'").replace(/"/g,"&quot;")}', this)">
+                    <div class="btn-foto" onclick="obrirCamera('${nomId}','${nom.replace(/'/g,"\\'").replace(/"/g,"&quot;")}')">
                       <i class="ti ti-camera" aria-hidden="true"></i> Fes una foto
                     </div>
                     <button type="button" class="btn-foto-treure" id="foto-treure-${nomId}" style="${foto ? '' : 'display:none'}" onclick="treureFotoRecepta('${nomId}','${nom.replace(/'/g,"\\'").replace(/"/g,"&quot;")}')">Treure</button>
@@ -2767,6 +2803,72 @@ function redimensionaImatge(file, maxDim, qualitat) {
     reader.onerror = () => reject(new Error('No s\'ha pogut llegir el fitxer'));
     reader.readAsDataURL(file);
   });
+}
+
+// ── Càmera amb getUserMedia (PWA-compatible) ──
+let cameraStream = null;
+let cameraFacingMode = 'environment';
+
+function obrirCamera(nomId, nom) {
+  if (document.querySelector('.camera-overlay')) return;
+  const overlay = document.createElement('div');
+  overlay.className = 'camera-overlay';
+  overlay.innerHTML = `
+    <video id="camera-video" autoplay playsinline muted></video>
+    <div class="camera-controls">
+      <button class="camera-btn-close" onclick="tancarCamera()" aria-label="Tancar">
+        <i class="ti ti-x" aria-hidden="true"></i>
+      </button>
+      <button class="camera-btn-capture" onclick="capturarFoto('${nomId}','${nom.replace(/'/g,"\\'").replace(/"/g,"&quot;")}')" aria-label="Fer foto"></button>
+      <button class="camera-btn-flip" onclick="canviarCamera('${nomId}','${nom.replace(/'/g,"\\'").replace(/"/g,"&quot;")}')" aria-label="Girar càmera">
+        <i class="ti ti-switch-horizontal" aria-hidden="true"></i>
+      </button>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  iniciarStream();
+}
+
+async function iniciarStream() {
+  try {
+    if (cameraStream) cameraStream.getTracks().forEach(t => t.stop());
+    cameraStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: cameraFacingMode, width: { ideal: 1280 }, height: { ideal: 960 } },
+      audio: false
+    });
+    const video = document.getElementById('camera-video');
+    if (video) { video.srcObject = cameraStream; }
+  } catch (e) {
+    mostrarToast('❌ No s\'ha pogut accedir a la càmera');
+    tancarCamera();
+  }
+}
+
+function canviarCamera(nomId, nom) {
+  cameraFacingMode = cameraFacingMode === 'environment' ? 'user' : 'environment';
+  iniciarStream();
+}
+
+function tancarCamera() {
+  if (cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); cameraStream = null; }
+  const overlay = document.querySelector('.camera-overlay');
+  if (overlay) overlay.remove();
+}
+
+async function capturarFoto(nomId, nom) {
+  const video = document.getElementById('camera-video');
+  if (!video) return;
+  const canvas = document.createElement('canvas');
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  canvas.getContext('2d').drawImage(video, 0, 0);
+  tancarCamera();
+  canvas.toBlob(async (blob) => {
+    if (!blob) { mostrarToast('❌ Error en capturar la foto'); return; }
+    const file = new File([blob], 'camera-foto.jpg', { type: 'image/jpeg' });
+    const fakeInput = { files: [file], value: '' };
+    await pujarFotoRecepta(nomId, nom, fakeInput);
+  }, 'image/jpeg', 0.92);
 }
 
 async function pujarFotoRecepta(nomId, nom, input) {
