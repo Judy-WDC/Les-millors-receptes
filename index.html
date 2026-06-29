@@ -314,7 +314,7 @@
   #llista.vista-grid .card-thumb { display: none; }
   .card-foto-float {
     width: 110px; height: 110px; border-radius: 10px; object-fit: cover;
-    float: right; margin: 0 0 10px 14px; background: var(--surface2);
+    float: right; margin: 12px 0 10px 14px; background: var(--surface2);
   }
   .card-dreta { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
   .badge-cat {
@@ -452,6 +452,28 @@
   .btn-cuinar:hover { color: var(--accent); background: rgba(245,247,73,0.08); }
   .btn-cuinar.actiu { background: var(--accent); color: var(--bg); }
   .btn-cuinar svg { width: 16px; height: 16px; display: block; }
+
+  /* Botons d'acció a la part inferior de la card expandida (mode llistat) */
+  .card-accions-inferiors {
+    display: flex; gap: 8px; margin-top: 14px;
+  }
+  .card-accio-btn {
+    flex: 1; padding: 9px 6px; border-radius: 8px;
+    background: transparent; border: 1.5px solid var(--border);
+    color: var(--text-dim); font-family: 'Poppins', sans-serif;
+    font-size: 12px; cursor: pointer;
+    transition: border-color 0.15s, background 0.15s, color 0.15s;
+  }
+  .card-accio-btn:hover { border-color: var(--accent); color: var(--accent); background: rgba(245,247,73,0.05); }
+  .card-accio-btn:active { transform: scale(0.98); }
+  .card-accio-btn.card-accio-btn-primary {
+    background: rgba(245,247,73,0.1); border-color: var(--accent); color: var(--accent); font-weight: 500;
+  }
+  .card-accio-btn.card-accio-btn-primary:hover { background: rgba(245,247,73,0.18); }
+  .card-accio-btn.actiu {
+    background: var(--accent); border-color: var(--accent); color: var(--bg); font-weight: 500;
+  }
+  .card-accio-btn.actiu:hover { background: var(--accent); color: var(--bg); }
 
   .ck-progress { margin: 12px 0 4px; }
   .ck-progress-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px; }
@@ -2029,13 +2051,13 @@ function formatQuantity(num) {
   const decimal = num - enters;
 
   const fraccions = [
-    { val: 0, sym: '' },
-    { val: 0.125, sym: '⅛' },
-    { val: 0.25, sym: '¼' },
-    { val: 1/3, sym: '⅓' },
-    { val: 0.5, sym: '½' },
-    { val: 2/3, sym: '⅔' },
-    { val: 0.75, sym: '¾' },
+    { val: 0, txt: '' },
+    { val: 0.125, txt: '1/8' },
+    { val: 0.25, txt: '1/4' },
+    { val: 1/3, txt: '1/3' },
+    { val: 0.5, txt: '1/2' },
+    { val: 2/3, txt: '2/3' },
+    { val: 0.75, txt: '3/4' },
   ];
 
   // Troba la fracció més propera
@@ -2052,11 +2074,26 @@ function formatQuantity(num) {
   }
 
   if (bestFrac.val === 0) return String(enters);
-  if (enters === 0) return bestFrac.sym;
-  return enters + ' ' + bestFrac.sym;
+  if (enters === 0) return bestFrac.txt;
+  return enters + '+' + bestFrac.txt;
+}
+
+function escHTML(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
 function renderScaledIngredient(ing, factor) {
+  if (ing.q === null) return escHTML(ing.n);
+  const scaled = ing.q * factor;
+  const qStr = formatQuantity(scaled); // pot contenir HTML (<span class="frac">)
+  const parts = [qStr];
+  if (ing.u) parts.push(escHTML(ing.u));
+  if (ing.n) parts.push(escHTML(ing.n));
+  return parts.join(' ');
+}
+
+// Versió text pla (sense escapament HTML) per a textareas i inputs
+function renderScaledIngredientPlain(ing, factor) {
   if (ing.q === null) return ing.n;
   const scaled = ing.q * factor;
   const qStr = formatQuantity(scaled);
@@ -2240,7 +2277,7 @@ function obrirDetall(nom, desDePopstate) {
 
   const ingParsed = getIngredientsParsed(r);
   const racionsBase = parseInt(r['Racions']) || 0;
-  const ckEstat = cookState[nom] || { actiu: false, marcats: new Set() };
+  const ckEstat = cookState[nom] || { actiu: false, marcats: new Set(), marcatsInstr: new Set() };
   const ckTotal = ingParsed.length;
   const ckFets = ingParsed.filter((_, i) => ckEstat.marcats.has(i)).length;
   const ckPct = ckTotal ? Math.round(ckFets / ckTotal * 100) : 0;
@@ -2286,20 +2323,40 @@ function obrirDetall(nom, desDePopstate) {
     <div class="ck-list${ckEstat.actiu ? ' cuinant' : ''}" id="det-ck-list-${nomId}">
       ${ingParsed.map((ing, idx) => {
         const fet = ckEstat.marcats.has(idx) ? ' fet' : '';
-        const text = renderScaledIngredient(ing, 1);
-        const safe = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        const ingHTML = renderScaledIngredient(ing, 1);
         return `<div class="ck-ing${fet}" id="det-ck-ing-${nomId}-${idx}" onclick="toggleIngredient('${nomId}','${nomEsc}',${idx})">
           <span class="ck-circle">${ckSvg}</span>
-          <span class="ck-txt">${safe}</span>
+          <span class="ck-txt">${ingHTML}</span>
         </div>`;
       }).join('')}
     </div>
   </div>` : '';
 
+  const passos = instruccions ? instruccions.split('\n').filter(Boolean) : [];
+  const ckPassosTotal = passos.length;
+  const ckPassosFets = passos.filter((_, i) => ckEstat.marcatsInstr.has(i)).length;
+  const ckPassosPct = ckPassosTotal ? Math.round(ckPassosFets / ckPassosTotal * 100) : 0;
+
   const instrHTML = instruccions
     ? `<div class="detall-seccio detall-instruccions">
          <div class="detall-seccio-label">Instruccions</div>
-         <ol>${instruccions.split('\n').filter(Boolean).map(s => `<li>${s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</li>`).join('')}</ol>
+         <div class="ck-progress" id="det-ck-instr-prog-wrap-${nomId}" style="${ckEstat.actiu ? '' : 'display:none'}">
+           <div class="ck-progress-top">
+             <span class="ck-progress-text"><span id="det-ck-instr-prog-${nomId}">${ckPassosFets}</span>/${ckPassosTotal} passos fets</span>
+             <button class="ck-reinicia" id="det-ck-instr-reinicia-${nomId}" style="${ckPassosFets ? '' : 'display:none'}" onclick="reiniciarPassos('${nomId}','${nomEsc}')">Desmarca-ho tot</button>
+           </div>
+           <div class="ck-bar-track"><div class="ck-bar" id="det-ck-instr-bar-${nomId}" style="width:${ckPassosPct}%"></div></div>
+         </div>
+         <div class="ck-list${ckEstat.actiu ? ' cuinant' : ''}" id="det-ck-instr-list-${nomId}">
+           ${passos.map((pas, idx) => {
+             const fet = ckEstat.marcatsInstr.has(idx) ? ' fet' : '';
+             const safe = pas.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+             return `<div class="ck-ing${fet}" id="det-ck-pas-${nomId}-${idx}" onclick="togglePas('${nomId}','${nomEsc}',${idx})">
+               <span class="ck-circle">${ckSvg}</span>
+               <span class="ck-txt">${safe}</span>
+             </div>`;
+           }).join('')}
+         </div>
        </div>`
     : '';
 
@@ -2646,9 +2703,10 @@ function toggle(nom) {
 // ══════════════════════════════════════════════
 
 function toggleCookMode(nomId, nom) {
-  const estat = cookState[nom] || { actiu: false, marcats: new Set() };
+  const estat = cookState[nom] || { actiu: false, marcats: new Set(), marcatsInstr: new Set() };
+  if (!estat.marcatsInstr) estat.marcatsInstr = new Set();
   estat.actiu = !estat.actiu;
-  if (!estat.actiu) estat.marcats = new Set(); // en sortir, es neteja tot
+  if (!estat.actiu) { estat.marcats = new Set(); estat.marcatsInstr = new Set(); } // en sortir, es neteja tot
   cookState[nom] = estat;
 
   // Actualitza elements de la card (accordion)
@@ -2656,10 +2714,18 @@ function toggleCookMode(nomId, nom) {
   const btn     = document.getElementById('ck-btn-' + nomId);
   const llista   = document.getElementById('ck-list-' + nomId);
   const progWrap = document.getElementById('ck-prog-wrap-' + nomId);
+  const llistaInstr  = document.getElementById('ck-instr-list-' + nomId);
+  const progInstrWrap = document.getElementById('ck-instr-prog-wrap-' + nomId);
 
   if (btn)    btn.classList.toggle('actiu', estat.actiu);
   if (llista) llista.classList.toggle('cuinant', estat.actiu);
   if (progWrap) progWrap.style.display = estat.actiu ? '' : 'none';
+  if (llistaInstr) llistaInstr.classList.toggle('cuinant', estat.actiu);
+  if (progInstrWrap) progInstrWrap.style.display = estat.actiu ? '' : 'none';
+
+  // Sincronitza el botó inferior de la card
+  const btnInferior = document.getElementById('card-accio-cuinar-' + nomId);
+  if (btnInferior) btnInferior.classList.toggle('actiu', estat.actiu);
 
   if (!estat.actiu && card) {
     card.querySelectorAll('.ck-ing.fet').forEach(el => el.classList.remove('fet'));
@@ -2670,11 +2736,15 @@ function toggleCookMode(nomId, nom) {
   const detBtnText = document.getElementById('det-ck-btn-text-' + nomId);
   const detLlista  = document.getElementById('det-ck-list-' + nomId);
   const detProgWrap = document.getElementById('det-ck-prog-wrap-' + nomId);
+  const detLlistaInstr  = document.getElementById('det-ck-instr-list-' + nomId);
+  const detProgInstrWrap = document.getElementById('det-ck-instr-prog-wrap-' + nomId);
 
   if (detBtn)     detBtn.classList.toggle('actiu', estat.actiu);
   if (detBtnText) detBtnText.textContent = estat.actiu ? 'Sortir del mode cuinar' : 'Mode cuinar';
   if (detLlista)  detLlista.classList.toggle('cuinant', estat.actiu);
   if (detProgWrap) detProgWrap.style.display = estat.actiu ? '' : 'none';
+  if (detLlistaInstr) detLlistaInstr.classList.toggle('cuinant', estat.actiu);
+  if (detProgInstrWrap) detProgInstrWrap.style.display = estat.actiu ? '' : 'none';
 
   // Desactiva/activa el stepper de racions
   const detStepper = document.getElementById('det-racions-stepper-' + nomId);
@@ -2706,22 +2776,50 @@ function toggleIngredient(nomId, nom, idx) {
   actualitzarProgresCook(nomId, nom);
 }
 
+function togglePas(nomId, nom, idx) {
+  const estat = cookState[nom];
+  if (!estat || !estat.actiu) return;
+  if (!estat.marcatsInstr) estat.marcatsInstr = new Set();
+  if (estat.marcatsInstr.has(idx)) estat.marcatsInstr.delete(idx);
+  else estat.marcatsInstr.add(idx);
+
+  const row = document.getElementById('ck-pas-' + nomId + '-' + idx);
+  if (row) row.classList.toggle('fet', estat.marcatsInstr.has(idx));
+  const detRow = document.getElementById('det-ck-pas-' + nomId + '-' + idx);
+  if (detRow) detRow.classList.toggle('fet', estat.marcatsInstr.has(idx));
+  actualitzarProgresCook(nomId, nom);
+}
+
 function reiniciarCook(nomId, nom) {
   const estat = cookState[nom];
   if (!estat) return;
   estat.marcats = new Set();
-  const card = document.getElementById('card-' + nomId);
-  if (card) card.querySelectorAll('.ck-ing.fet').forEach(el => el.classList.remove('fet'));
-  const detPanell = document.getElementById('panell-detall');
-  if (detPanell) detPanell.querySelectorAll('.ck-ing.fet').forEach(el => el.classList.remove('fet'));
+  // Desmarca només els ingredients (no els passos)
+  const llistaCard = document.getElementById('ck-list-' + nomId);
+  if (llistaCard) llistaCard.querySelectorAll('.ck-ing.fet').forEach(el => el.classList.remove('fet'));
+  const llistaDet = document.getElementById('det-ck-list-' + nomId);
+  if (llistaDet) llistaDet.querySelectorAll('.ck-ing.fet').forEach(el => el.classList.remove('fet'));
+  actualitzarProgresCook(nomId, nom);
+}
+
+function reiniciarPassos(nomId, nom) {
+  const estat = cookState[nom];
+  if (!estat) return;
+  estat.marcatsInstr = new Set();
+  const llistaCard = document.getElementById('ck-instr-list-' + nomId);
+  if (llistaCard) llistaCard.querySelectorAll('.ck-ing.fet').forEach(el => el.classList.remove('fet'));
+  const llistaDet = document.getElementById('det-ck-instr-list-' + nomId);
+  if (llistaDet) llistaDet.querySelectorAll('.ck-ing.fet').forEach(el => el.classList.remove('fet'));
   actualitzarProgresCook(nomId, nom);
 }
 
 function actualitzarProgresCook(nomId, nom) {
-  const estat = cookState[nom] || { marcats: new Set() };
+  const estat = cookState[nom] || { marcats: new Set(), marcatsInstr: new Set() };
   const fets = estat.marcats.size;
+  const fetsInstr = (estat.marcatsInstr || new Set()).size;
 
-  // Actualitza card (accordion)
+  // ── INGREDIENTS ──
+  // Card (accordion)
   const llista = document.getElementById('ck-list-' + nomId);
   const total = llista ? llista.querySelectorAll('.ck-ing').length : 0;
   const progEl = document.getElementById('ck-prog-' + nomId);
@@ -2731,7 +2829,7 @@ function actualitzarProgresCook(nomId, nom) {
   if (barEl)  barEl.style.width = (total ? Math.round(fets / total * 100) : 0) + '%';
   if (resetEl) resetEl.style.display = fets > 0 ? '' : 'none';
 
-  // Actualitza pàgina de detall (det-)
+  // Detall (det-)
   const detLlista = document.getElementById('det-ck-list-' + nomId);
   const detTotal = detLlista ? detLlista.querySelectorAll('.ck-ing').length : 0;
   const detProgEl = document.getElementById('det-ck-prog-' + nomId);
@@ -2740,6 +2838,27 @@ function actualitzarProgresCook(nomId, nom) {
   if (detProgEl) detProgEl.textContent = fets;
   if (detBarEl)  detBarEl.style.width = (detTotal ? Math.round(fets / detTotal * 100) : 0) + '%';
   if (detResetEl) detResetEl.style.display = fets > 0 ? '' : 'none';
+
+  // ── INSTRUCCIONS ──
+  // Card (accordion)
+  const llistaI = document.getElementById('ck-instr-list-' + nomId);
+  const totalI = llistaI ? llistaI.querySelectorAll('.ck-ing').length : 0;
+  const progElI = document.getElementById('ck-instr-prog-' + nomId);
+  const barElI  = document.getElementById('ck-instr-bar-' + nomId);
+  const resetElI = document.getElementById('ck-instr-reinicia-' + nomId);
+  if (progElI) progElI.textContent = fetsInstr;
+  if (barElI)  barElI.style.width = (totalI ? Math.round(fetsInstr / totalI * 100) : 0) + '%';
+  if (resetElI) resetElI.style.display = fetsInstr > 0 ? '' : 'none';
+
+  // Detall (det-)
+  const detLlistaI = document.getElementById('det-ck-instr-list-' + nomId);
+  const detTotalI = detLlistaI ? detLlistaI.querySelectorAll('.ck-ing').length : 0;
+  const detProgElI = document.getElementById('det-ck-instr-prog-' + nomId);
+  const detBarElI  = document.getElementById('det-ck-instr-bar-' + nomId);
+  const detResetElI = document.getElementById('det-ck-instr-reinicia-' + nomId);
+  if (detProgElI) detProgElI.textContent = fetsInstr;
+  if (detBarElI)  detBarElI.style.width = (detTotalI ? Math.round(fetsInstr / detTotalI * 100) : 0) + '%';
+  if (detResetElI) detResetElI.style.display = fetsInstr > 0 ? '' : 'none';
 }
 
 // ── Manteniment de pantalla encesa (Wake Lock) ──
@@ -2798,13 +2917,12 @@ function canviarRacions(nomId, nom, delta) {
   const ingParsed = getIngredientsParsed(r);
   const listEl = document.getElementById('det-ck-list-' + nomId);
   if (listEl) {
-    const ckEstat = cookState[nom] || { actiu: false, marcats: new Set() };
+    const ckEstat = cookState[nom] || { actiu: false, marcats: new Set(), marcatsInstr: new Set() };
     listEl.querySelectorAll('.ck-ing').forEach((el, idx) => {
       if (idx < ingParsed.length) {
-        const txt = renderScaledIngredient(ingParsed[idx], factor);
-        const safe = txt.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        const ingHTML = renderScaledIngredient(ingParsed[idx], factor);
         const txtEl = el.querySelector('.ck-txt');
-        if (txtEl) txtEl.innerHTML = safe;
+        if (txtEl) txtEl.innerHTML = ingHTML;
       }
     });
   }
@@ -2843,10 +2961,9 @@ function editarRacionsInline(nomId, nom) {
     if (listEl) {
       listEl.querySelectorAll('.ck-ing').forEach((el, idx) => {
         if (idx < ingParsed.length) {
-          const txt = renderScaledIngredient(ingParsed[idx], factor);
-          const safe = txt.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+          const ingHTML = renderScaledIngredient(ingParsed[idx], factor);
           const txtEl = el.querySelector('.ck-txt');
-          if (txtEl) txtEl.innerHTML = safe;
+          if (txtEl) txtEl.innerHTML = ingHTML;
         }
       });
     }
@@ -2958,10 +3075,35 @@ function aplicar() {
       `<span class="card-star${i <= valoracio ? '' : ' off'}" onclick="event.stopPropagation();valorar('${nom.replace(/'/g,"\\'").replace(/"/g,"&quot;")}',${i})" style="cursor:pointer">★</span>`
     ).join('');
     const instrHTML  = instruccions
-      ? `<div class="card-section card-instruccions">
-           <div class="card-section-label">Instruccions</div>
-           <ol>${instruccions.split('\n').filter(Boolean).map(s => `<li>${s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</li>`).join('')}</ol>
-         </div>`
+      ? (() => {
+          const passos = instruccions.split('\n').filter(Boolean);
+          const estatI = cookState[nom] || { actiu: false, marcats: new Set(), marcatsInstr: new Set() };
+          if (!estatI.marcatsInstr) estatI.marcatsInstr = new Set();
+          const totalP = passos.length;
+          const fetsP = passos.filter((_, i) => estatI.marcatsInstr.has(i)).length;
+          const pctP = totalP ? Math.round(fetsP / totalP * 100) : 0;
+          const ckSvgI = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>`;
+          return `<div class="card-section card-instruccions">
+            <div class="card-section-label">Instruccions</div>
+            <div class="ck-progress" id="ck-instr-prog-wrap-${nomId}" style="${estatI.actiu ? '' : 'display:none'}">
+              <div class="ck-progress-top">
+                <span class="ck-progress-text"><span id="ck-instr-prog-${nomId}">${fetsP}</span>/${totalP} passos fets</span>
+                <button class="ck-reinicia" id="ck-instr-reinicia-${nomId}" style="${fetsP ? '' : 'display:none'}" onclick="event.stopPropagation(); reiniciarPassos('${nomId}','${nom.replace(/'/g,"\\'").replace(/"/g,"&quot;")}')">Desmarca-ho tot</button>
+              </div>
+              <div class="ck-bar-track"><div class="ck-bar" id="ck-instr-bar-${nomId}" style="width:${pctP}%"></div></div>
+            </div>
+            <div class="ck-list${estatI.actiu ? ' cuinant' : ''}" id="ck-instr-list-${nomId}">
+              ${passos.map((pas, idx) => {
+                const fet = estatI.marcatsInstr.has(idx) ? ' fet' : '';
+                const safe = pas.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+                return `<div class="ck-ing${fet}" id="ck-pas-${nomId}-${idx}" onclick="event.stopPropagation(); togglePas('${nomId}','${nom.replace(/'/g,"\\'").replace(/"/g,"&quot;")}',${idx})">
+                  <span class="ck-circle">${ckSvgI}</span>
+                  <span class="ck-txt">${safe}</span>
+                </div>`;
+              }).join('')}
+            </div>
+          </div>`;
+        })()
       : '';
     const etHTML = etiquetes
       ? `<div class="card-section">
@@ -2981,7 +3123,7 @@ function aplicar() {
       <div class="card-img-wrap">
         <img class="card-img" src="${fotoSrc}" alt="${nom.replace(/"/g,'&quot;')}" loading="lazy">
       </div>
-      <div class="card-header" onclick="${vistaTipus === 'grid' ? 'event.stopPropagation()' : `toggle('${nom.replace(/'/g,"\\'").replace(/"/g,"&quot;")}')`}" >
+      <div class="card-header" ${vistaTipus === 'grid' ? '' : `onclick="toggle('${nom.replace(/'/g,"\\'").replace(/"/g,"&quot;")}')"`} >
         ${foto ? `<img class="card-thumb" src="${foto}" alt="" loading="lazy">` : ''}
         <span class="card-nom">${nom}</span>
         <div class="card-dreta">
@@ -3015,7 +3157,7 @@ function aplicar() {
             ${(() => {
               const ingParsedCard = getIngredientsParsed(r);
               const ingArr = ingParsedCard.map(i => renderScaledIngredient(i, 1));
-              const estat = cookState[nom] || { actiu: false, marcats: new Set() };
+              const estat = cookState[nom] || { actiu: false, marcats: new Set(), marcatsInstr: new Set() };
               const total = ingArr.length;
               const fets = ingArr.filter((_, i) => estat.marcats.has(i)).length;
               const pct = total ? Math.round(fets / total * 100) : 0;
@@ -3031,10 +3173,9 @@ function aplicar() {
               <div class="ck-list${estat.actiu ? ' cuinant' : ''}" id="ck-list-${nomId}">
                 ${ingArr.map((item, idx) => {
                   const fet = estat.marcats.has(idx) ? ' fet' : '';
-                  const safe = item.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
                   return `<div class="ck-ing${fet}" id="ck-ing-${nomId}-${idx}" onclick="event.stopPropagation(); toggleIngredient('${nomId}','${nom.replace(/'/g,"\\'").replace(/"/g,"&quot;")}',${idx})">
                     <span class="ck-circle">${checkSvg}</span>
-                    <span class="ck-txt">${safe}</span>
+                    <span class="ck-txt">${item}</span>
                   </div>`;
                 }).join('')}
               </div>`;
@@ -3046,6 +3187,11 @@ function aplicar() {
               <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
               ${font}${url ? ` · <a href="${url}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" style="color:var(--accent);text-decoration:none;font-size:12px;">ves-hi</a>` : ''}
             </p>` : ''}
+            <div class="card-accions-inferiors" onclick="event.stopPropagation()">
+              <button class="card-accio-btn card-accio-btn-primary" onclick="obrirDetall('${nom.replace(/'/g,"\\'").replace(/"/g,'&quot;')}')">Obrir</button>
+              <button class="card-accio-btn${(cookState[nom] && cookState[nom].actiu) ? ' actiu' : ''}" id="card-accio-cuinar-${nomId}" onclick="toggleCookMode('${nomId}', '${nom.replace(/'/g,"\\'").replace(/"/g,"&quot;")}')">Mode cuinar</button>
+              <button class="card-accio-btn" onclick="obrirEdicio('${nomId}', '${nom.replace(/'/g,"\\'").replace(/"/g,"&quot;")}')">Editar</button>
+            </div>
             <div class="card-edit-form" id="edit-form-${nomId}" onclick="event.stopPropagation()" style="margin-top:12px;">
               <div class="card-edit-row">
                 <div class="card-edit-group">
@@ -3083,7 +3229,7 @@ function aplicar() {
                 <span class="card-edit-label">Ingredients</span>
                 <textarea id="edit-ing-${nomId}">${(() => {
                   const parsed = getIngredientsParsed(r);
-                  if (parsed.length) return parsed.map(i => renderScaledIngredient(i, 1)).join('\n');
+                  if (parsed.length) return parsed.map(i => renderScaledIngredientPlain(i, 1)).join('\n');
                   return ing.split(' · ').join('\n');
                 })()}</textarea>
               </div>
@@ -3181,6 +3327,10 @@ function obrirEdicio(nomId, nom) {
   const form = document.getElementById('edit-form-' + nomId);
   if (form) form.classList.add('visible');
 
+  // Guarda el text original dels ingredients per detectar canvis al desar
+  const ingTextarea = document.getElementById('edit-ing-' + nomId);
+  if (ingTextarea) ingTextarea.dataset.original = ingTextarea.value;
+
   // Actualitza el select de categoria amb CAT_OPCIONS actual
   // (pot haver crescut des que es va renderitzar la targeta)
   const sel = document.getElementById('edit-cat-' + nomId);
@@ -3193,6 +3343,23 @@ function obrirEdicio(nomId, nom) {
     sel.innerHTML = opts;
     sel.value = catActual;
   }
+
+  // Scroll perquè el formulari quedi visible
+  // Si hi cap sencer a la pantalla → el centrem; si no → posem el principi a dalt
+  setTimeout(() => {
+    if (!form) return;
+    const rect = form.getBoundingClientRect();
+    const altura = window.innerHeight;
+    const margeSuperior = 16; // un petit espai sobre el formulari
+    if (rect.height <= altura - margeSuperior) {
+      // Hi cap sencer: el centrem dins la finestra
+      form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    } else {
+      // No hi cap: posem el principi al capdamunt amb un petit marge
+      const y = rect.top + window.pageYOffset - margeSuperior;
+      window.scrollTo({ top: y, behavior: 'smooth' });
+    }
+  }, 50);
 }
 
 function tancarEdicio(nomId) {
@@ -3226,20 +3393,33 @@ async function eliminarRecepta(nomId, nomOriginal) {
 }
 
 async function desarEdicio(nomId, nomOriginal) {
-  const ingRaw  = document.getElementById('edit-ing-' + nomId).value.trim();
+  const ingTextarea = document.getElementById('edit-ing-' + nomId);
+  const ingRaw = ingTextarea.value.trim();
+  const ingOriginal = (ingTextarea.dataset.original || '').trim();
+  const haCanviat = ingRaw !== ingOriginal;
+
   if (!ingRaw) { confirmarDesarEdicio(nomId, nomOriginal, '[]'); return; }
 
   const parsed = parseAllIngredients(ingRaw);
   const ingJSON = serializeIngredients(parsed);
 
-  // Mostra la previsualització
-  const html = buildIngPreviewHTML(
-    parsed,
-    `tancarPreviewIng()`,
-    `tancarPreviewIng(); confirmarDesarEdicio('${nomId}','${nomOriginal.replace(/'/g,"\\'")}', window._ingPreviewJSON)`
-  );
-  window._ingPreviewJSON = ingJSON;
-  document.body.insertAdjacentHTML('beforeend', html);
+  if (!haCanviat) {
+    // Els ingredients no s'han tocat: desa directament sense preview
+    const r = receptes.find(x => x['Nom de la recepta'] === nomOriginal);
+    const ingExistent = r?.['Ingredients'] || '';
+    // Si ja estaven en JSON, conserva'ls tal qual; si no, usa el parsing
+    const ingFinal = ingExistent.trim().startsWith('[') ? ingExistent : ingJSON;
+    confirmarDesarEdicio(nomId, nomOriginal, ingFinal);
+  } else {
+    // Mostra la previsualització
+    const html = buildIngPreviewHTML(
+      parsed,
+      `tancarPreviewIng()`,
+      `tancarPreviewIng(); confirmarDesarEdicio('${nomId}','${nomOriginal.replace(/'/g,"\\'")}', window._ingPreviewJSON)`
+    );
+    window._ingPreviewJSON = ingJSON;
+    document.body.insertAdjacentHTML('beforeend', html);
+  }
 }
 
 async function confirmarDesarEdicio(nomId, nomOriginal, ingJSON) {
