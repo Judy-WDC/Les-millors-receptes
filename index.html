@@ -1916,6 +1916,261 @@ const API_PYTHON = 'http://localhost:5000';
 const CAT_OPCIONS = ['Untables', 'Untables dolços', 'Cremes', 'Currys', 'Barretes', 'Boletes energètiques', 'Altres'];
 
 // ══════════════════════════════════════════════
+// DICCIONARI D'INGREDIENTS (ca / es / en)
+// Permet cercar ingredients en castellà o anglès
+// ══════════════════════════════════════════════
+
+const ING_SINONIMS = [
+  // ── Verdures i hortalisses ──
+  ['tomàquet','tomate','tomato'],
+  ['ceba','cebolla','onion'],
+  ['all','ajo','garlic'],
+  ['pebrot','pimiento','pepper'],
+  ['pastanaga','zanahoria','carrot'],
+  ['carbassó','calabacín','zucchini'],
+  ['carbassa','calabaza','pumpkin'],
+  ['albergínia','berenjena','eggplant'],
+  ['espinacs','espinacas','spinach'],
+  ['enciam','lechuga','lettuce'],
+  ['api','apio','celery'],
+  ['porro','puerro','leek'],
+  ['bròquil','brócoli','broccoli'],
+  ['coliflor','coliflor','cauliflower'],
+  ['col','col','cabbage'],
+  ['mongeta verda','judía verde','green bean'],
+  ['pèsol','guisante','pea'],
+  ['fava','haba','broad bean'],
+  ['bleda','acelga','chard'],
+  ['remolatxa','remolacha','beetroot'],
+  ['nap','nabo','turnip'],
+  ['rave','rábano','radish'],
+  ['xampinyó','champiñón','mushroom'],
+  ['bolet','seta','mushroom'],
+  ['cogombre','pepino','cucumber'],
+  ['patata','patata','potato'],
+  ['moniato','boniato','sweet potato'],
+  ['moniato','batata','sweet potato'],
+  ['xirivia','chirivía','parsnip'],
+  ['calçot','calçot','calçot'],
+  ['rúcula','rúcula','arugula'],
+  ['canònge','canónigo','lamb lettuce'],
+  ['kale','kale','kale'],
+  ['àloe','aloe','aloe'],
+  ['julivert','perejil','parsley'],
+  ['coriandre','cilantro','coriander'],
+  ['alfàbrega','albahaca','basil'],
+  ['menta','menta','mint'],
+  ['herba','hierba','herb'],
+  ['tomàquet sec','tomate seco','sun-dried tomato'],
+  ['salsa de tomàquet','salsa de tomate','tomato sauce'],
+  // ── Fruita ──
+  ['poma','manzana','apple'],
+  ['pera','pera','pear'],
+  ['plàtan','plátano','banana'],
+  ['taronja','naranja','orange'],
+  ['mandarina','mandarina','tangerine'],
+  ['llimona','limón','lemon'],
+  ['llima','lima','lime'],
+  ['maduixa','fresa','strawberry'],
+  ['gerd','frambuesa','raspberry'],
+  ['mora','mora','blackberry'],
+  ['nabiu','arándano','blueberry'],
+  ['cirera','cereza','cherry'],
+  ['préssec','melocotón','peach'],
+  ['albercoc','albaricoque','apricot'],
+  ['pruna','ciruela','plum'],
+  ['raïm','uva','grape'],
+  ['síndria','sandía','watermelon'],
+  ['meló','melón','melon'],
+  ['pinya','piña','pineapple'],
+  ['mango','mango','mango'],
+  ['coco','coco','coconut'],
+  ['kiwi','kiwi','kiwi'],
+  ['figa','higo','fig'],
+  ['dàtil','dátil','date'],
+  ['magrana','granada','pomegranate'],
+  ['papaia','papaya','papaya'],
+  ['maracujà','maracuyá','passion fruit'],
+  ['avocado','aguacate','avocado'],
+  ['alvocat','aguacate','avocado'],
+  ['pàssola','pasa','raisin'],
+  // ── Llegums ──
+  ['llentia','lenteja','lentil'],
+  ['cigró','garbanzo','chickpea'],
+  ['mongeta','judía','bean'],
+  ['fesol','alubia','bean'],
+  ['soja','soja','soy'],
+  ['edamame','edamame','edamame'],
+  ['tofu','tofu','tofu'],
+  ['tempeh','tempeh','tempeh'],
+  // ── Cereals i derivats ──
+  ['arròs','arroz','rice'],
+  ['civada','avena','oat'],
+  ['blat','trigo','wheat'],
+  ['farina','harina','flour'],
+  ['pa','pan','bread'],
+  ['pasta','pasta','pasta'],
+  ['quinoa','quinoa','quinoa'],
+  ['blat de moro','maíz','corn'],
+  ['ordi','cebada','barley'],
+  ['sègol','centeno','rye'],
+  ['millet','mijo','millet'],
+  ['amarant','amaranto','amaranth'],
+  ['bulgur','bulgur','bulgur'],
+  ['cuscús','cuscús','couscous'],
+  ['sarraí','trigo sarraceno','buckwheat'],
+  ['fajol','alforfón','buckwheat'],
+  ['espelta','espelta','spelt'],
+  // ── Fruits secs i llavors ──
+  ['ametlla','almendra','almond'],
+  ['nou','nuez','walnut'],
+  ['avellana','avellana','hazelnut'],
+  ['anacard','anacardo','cashew'],
+  ['cacauet','cacahuete','peanut'],
+  ['festuc','pistacho','pistachio'],
+  ['pinyó','piñón','pine nut'],
+  ['nous del Brasil','nuez de Brasil','brazil nut'],
+  ['macadàmia','macadamia','macadamia'],
+  ['pecan','pecana','pecan'],
+  ['llavor de lli','semilla de lino','flaxseed'],
+  ['llavor de gira-sol','semilla de girasol','sunflower seed'],
+  ['llavor de carbassa','semilla de calabaza','pumpkin seed'],
+  ['llavor de xia','semilla de chía','chia seed'],
+  ['xia','chía','chia'],
+  ['sèsam','sésamo','sesame'],
+  ['cànem','cáñamo','hemp'],
+  ['llavor de cànem','semilla de cáñamo','hemp seed'],
+  ['pipe de girasol','pipa de girasol','sunflower seed'],
+  ['pipe de carbassa','pipa de calabaza','pumpkin seed'],
+  // ── Espècies i condiments ──
+  ['pebre','pimienta','pepper'],
+  ['sal','sal','salt'],
+  ['sucre','azúcar','sugar'],
+  ['canyella','canela','cinnamon'],
+  ['cúrcuma','cúrcuma','turmeric'],
+  ['gingebre','jengibre','ginger'],
+  ['comí','comino','cumin'],
+  ['curri','curry','curry'],
+  ['pebre vermell','pimentón','paprika'],
+  ['bitxo','guindilla','chili'],
+  ['xili','chile','chili'],
+  ['nou moscada','nuez moscada','nutmeg'],
+  ['clau','clavo','clove'],
+  ['cardamom','cardamomo','cardamom'],
+  ['anís','anís','anise'],
+  ['fonoll','hinojo','fennel'],
+  ['orenga','orégano','oregano'],
+  ['farigola','tomillo','thyme'],
+  ['romaní','romero','rosemary'],
+  ['llorer','laurel','bay leaf'],
+  ['safrà','azafrán','saffron'],
+  ['vainilla','vainilla','vanilla'],
+  ['mostassa','mostaza','mustard'],
+  ['vinagre','vinagre','vinegar'],
+  ['vinagre de poma','vinagre de manzana','apple cider vinegar'],
+  ['vinagre d\'arròs','vinagre de arroz','rice vinegar'],
+  ['salsa de soja','salsa de soja','soy sauce'],
+  ['tamari','tamari','tamari'],
+  ['tahina','tahini','tahini'],
+  ['tahini','tahini','tahini'],
+  ['llevat','levadura','yeast'],
+  ['llevat nutricional','levadura nutricional','nutritional yeast'],
+  ['pebre dolç','pimentón dulce','sweet paprika'],
+  ['pebre de cayena','pimienta de cayena','cayenne'],
+  ['umeboshi','umeboshi','umeboshi'],
+  // ── Làctics i begudes vegetals ──
+  ['llet','leche','milk'],
+  ['iogurt','yogur','yogurt'],
+  ['formatge','queso','cheese'],
+  ['formatge en crema','queso crema','cream cheese'],
+  ['parmesà','parmesano','parmesan'],
+  ['mozzarella','mozzarella','mozzarella'],
+  ['feta','feta','feta'],
+  ['nata','nata','cream'],
+  ['mantega','mantequilla','butter'],
+  ['llet de coco','leche de coco','coconut milk'],
+  ['llet d\'ametlla','leche de almendra','almond milk'],
+  ['llet de civada','leche de avena','oat milk'],
+  ['llet de soja','leche de soja','soy milk'],
+  ['beguda vegetal','bebida vegetal','plant milk'],
+  ['crema d\'ametlles','crema de almendras','almond butter'],
+  ['crema de cacauet','crema de cacahuete','peanut butter'],
+  // ── Olis i greixos ──
+  ['oli','aceite','oil'],
+  ['oli d\'oliva','aceite de oliva','olive oil'],
+  ['oli de coco','aceite de coco','coconut oil'],
+  ['oli de sèsam','aceite de sésamo','sesame oil'],
+  // ── Edulcorants i dolços ──
+  ['mel','miel','honey'],
+  ['xocolata','chocolate','chocolate'],
+  ['cacau','cacao','cocoa'],
+  ['xarop d\'auró','sirope de arce','maple syrup'],
+  ['xarop d\'atzavara','sirope de agave','agave syrup'],
+  ['melassa','melaza','molasses'],
+  ['panela','panela','panela'],
+  // ── Altres ──
+  ['ou','huevo','egg'],
+  ['aigua','agua','water'],
+  ['brou','caldo','broth'],
+  ['pastilla de caldo','pastilla de caldo','stock cube'],
+  ['miso','miso','miso'],
+  ['alga','alga','seaweed'],
+  ['agar','agar','agar'],
+  ['aquafaba','aquafaba','aquafaba'],
+  ['te','té','tea'],
+  ['vi','vino','wine'],
+  ['kombucha','kombucha','kombucha'],
+  // ── Peix, carn i conserves (bàsics) ──
+  ['sardina','sardina','sardine'],
+  ['tonyina','atún','tuna'],
+  ['musclo','mejillón','mussel'],
+  ['salmó','salmón','salmon'],
+  ['pollastre','pollo','chicken'],
+  ['botifarra','butifarra','sausage'],
+  ['pernil','jamón','ham'],
+];
+
+// Construïm un índex: per cada terme → conjunt de TOTS els sinònims del grup
+const _ingIndex = new Map();
+for (const trio of ING_SINONIMS) {
+  const tots = trio.map(t => t.toLowerCase());
+  for (const t of tots) {
+    if (!_ingIndex.has(t)) _ingIndex.set(t, new Set());
+    for (const s of tots) _ingIndex.get(t).add(s);
+  }
+}
+
+/**
+ * Genera troncs curts d'un terme per capturar plurals
+ * (ametlla/ametlles, pastanaga/pastanagues, cigró/cigrons, etc.)
+ */
+function _troncs(mot) {
+  const res = [mot];
+  if (mot.length > 4) res.push(mot.slice(0, -1));
+  if (mot.length > 5) res.push(mot.slice(0, -2));
+  return res;
+}
+
+/**
+ * Donada una query, retorna un array de termes addicionals a buscar (ca+es+en).
+ * Fa matching parcial i genera troncs per capturar plurals.
+ */
+function expandirCerca(q) {
+  if (!q || q.length < 2) return [];
+  const extra = new Set();
+  for (const [key, sinSet] of _ingIndex) {
+    if (key.includes(q)) {
+      for (const s of sinSet) {
+        extra.add(s);
+        // Afegim troncs per capturar variacions de plural
+        for (const tr of _troncs(s)) extra.add(tr);
+      }
+    }
+  }
+  return [...extra];
+}
+
+// ══════════════════════════════════════════════
 // PARSER D'INGREDIENTS I ESCALAT DE RACIONS
 // ══════════════════════════════════════════════
 
@@ -3024,10 +3279,12 @@ function resetSorpren() {
 function aplicar() {
   resetSorpren(); // quan s'invoca aplicar des de cerca/filtre, sortim del mode sorpresa
   const q = (document.getElementById('cerca').value || '').toLowerCase();
+  const qExpansio = expandirCerca(q);
   const resultat = receptes.filter(r => {
     const catOk  = catActiva === 'totes' || r['Categoria'] === catActiva;
     const nomOk  = r['Nom de la recepta']?.toLowerCase().includes(q);
-    const ingOk  = r['Ingredients']?.toLowerCase().includes(q);
+    const ingText = r['Ingredients']?.toLowerCase() || '';
+    const ingOk  = ingText.includes(q) || qExpansio.some(t => ingText.includes(t));
     const fontOk = !fontActiva || r['Font'] === fontActiva;
     const etOk  = etiquetaActiva.size === 0 ||
       (() => {
@@ -3188,7 +3445,7 @@ function aplicar() {
               ${font}${url ? ` · <a href="${url}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" style="color:var(--accent);text-decoration:none;font-size:12px;">ves-hi</a>` : ''}
             </p>` : ''}
             <div class="card-accions-inferiors" onclick="event.stopPropagation()">
-              <button class="card-accio-btn card-accio-btn-primary" onclick="obrirDetall('${nom.replace(/'/g,"\\'").replace(/"/g,'&quot;')}')">Obrir</button>
+              <button class="card-accio-btn" onclick="obrirDetall('${nom.replace(/'/g,"\\'").replace(/"/g,'&quot;')}')">Obrir</button>
               <button class="card-accio-btn${(cookState[nom] && cookState[nom].actiu) ? ' actiu' : ''}" id="card-accio-cuinar-${nomId}" onclick="toggleCookMode('${nomId}', '${nom.replace(/'/g,"\\'").replace(/"/g,"&quot;")}')">Mode cuinar</button>
               <button class="card-accio-btn" onclick="obrirEdicio('${nomId}', '${nom.replace(/'/g,"\\'").replace(/"/g,"&quot;")}')">Editar</button>
             </div>
