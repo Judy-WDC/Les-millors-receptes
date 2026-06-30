@@ -1622,6 +1622,7 @@
 // ══════════════════════════════════════════════
 const VERSIO_NOVETATS = '2.4';
 const NOVETATS = [
+  { titol: 'Panell de novetats', desc: 'ja el tenim, per ensenyar-vos les noves meravelles de l\'aplicació! Hehehe!' },
   { titol: 'Cerca multiidioma', desc: 'ara pots buscar ingredients en català, castellà o anglès.' },
   { titol: 'Mode cuinar millorat', desc: 'la pantalla ja no s\'apaga mentre cuines.' },
   { titol: 'Nova tipografia', desc: 'per als títols de les receptes.' },
@@ -2306,6 +2307,12 @@ function parseIngredientLine(text) {
   text = text.trim();
   if (!text) return null;
 
+  // Normalitza fraccions Unicode a ASCII per al parser
+  const FRAC_UNICODE = { '½':'1/2','¼':'1/4','¾':'3/4','⅓':'1/3','⅔':'2/3','⅛':'1/8','⅜':'3/8','⅝':'5/8','⅞':'7/8' };
+  text = text.replace(/(\d)?([½¼¾⅓⅔⅛⅜⅝⅞])/g, (_, pre, frac) =>
+    pre ? pre + ' ' + FRAC_UNICODE[frac] : FRAC_UNICODE[frac]
+  );
+
   let q = null;
   let u = '';
   let n = text;
@@ -2378,7 +2385,17 @@ function getIngredientsParsed(r) {
   if (!raw) return [];
   // Format nou: JSON array
   if (raw.trim().startsWith('[')) {
-    try { return JSON.parse(raw); } catch(e) { /* fallback a text */ }
+    try {
+      const items = JSON.parse(raw);
+      // Reprocessa ingredients amb q===null: pot haver-hi una quantitat dins del nom
+      return items.map(ing => {
+        if (ing.q === null && ing.n) {
+          const reParsed = parseIngredientLine(ing.n);
+          if (reParsed && reParsed.q !== null) return reParsed;
+        }
+        return ing;
+      });
+    } catch(e) { /* fallback a text */ }
   }
   // Format legacy: text separat per ' · '
   return parseAllIngredients(raw);
