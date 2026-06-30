@@ -1365,6 +1365,42 @@
     overflow: hidden;
   }
   #panell-portada.actiu { display: flex; }
+  /* ── Modal de novetats ── */
+  .novetats-overlay {
+    display: none; position: fixed; inset: 0; z-index: 9999;
+    background: rgba(0,0,0,0.55);
+    align-items: center; justify-content: center; padding: 20px;
+  }
+  .novetats-overlay.visible { display: flex; }
+  .novetats-modal {
+    background: var(--surface); border-radius: 16px; border: 0.5px solid var(--border);
+    width: 100%; max-width: 340px; padding: 26px 24px 22px;
+  }
+  .novetats-badge {
+    font-size: 11px; font-weight: 500; letter-spacing: 0.06em;
+    color: var(--bg); background: var(--accent);
+    padding: 3px 10px; border-radius: 20px; display: inline-block; margin-bottom: 12px;
+  }
+  .novetats-titol {
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-size: 21px; font-weight: 500; color: var(--text); margin: 0 0 6px;
+  }
+  .novetats-versio { font-size: 12px; color: var(--text-muted); margin: 0 0 18px; }
+  .novetats-item { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 13px; }
+  .novetats-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--accent); margin-top: 7px; flex-shrink: 0;
+  }
+  .novetats-text { font-size: 15px; color: var(--text-dim); line-height: 1.5; }
+  .novetats-text strong { color: var(--text); font-weight: 500; }
+  .novetats-btn-wrap { display: flex; justify-content: center; margin-top: 18px; }
+  .novetats-btn {
+    display: inline-block; padding: 9px 28px; border-radius: 10px;
+    background: transparent; color: var(--accent); border: 1.5px solid var(--accent);
+    font-size: 13px; cursor: pointer; transition: background 0.2s;
+  }
+  .novetats-btn:hover { background: rgba(245,247,73,0.06); }
+
   .portada-container {
     width: 100%;
     max-width: 400px;
@@ -1554,12 +1590,62 @@
     if (val === '4030') {
       localStorage.setItem('receptes_auth', '1');
       document.getElementById('passwordScreen').style.display = 'none';
+      mostrarNovetats();
     } else {
       document.getElementById('passwordError').textContent = 'Contrasenya incorrecta';
       document.getElementById('passwordInput').value = '';
       document.getElementById('passwordInput').focus();
     }
   }
+</script>
+
+<!-- ══════════════════════════════════════
+     MODAL DE NOVETATS
+══════════════════════════════════════ -->
+<div class="novetats-overlay" id="novetats-overlay">
+  <div class="novetats-modal">
+    <div class="novetats-badge">NOVETATS</div>
+    <div class="novetats-titol">Mira, mira!</div>
+    <div class="novetats-versio" id="novetats-versio"></div>
+    <div id="novetats-llista"></div>
+    <div class="novetats-btn-wrap">
+      <button class="novetats-btn" onclick="tancarNovetats()">Entesos!</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════
+// NOVETATS — Modifica aquí!
+// Canvia VERSIO_NOVETATS i la llista per mostrar
+// el modal la pròxima vegada que l'usuària obri l'app.
+// ══════════════════════════════════════════════
+const VERSIO_NOVETATS = '2.4';
+const NOVETATS = [
+  { titol: 'Cerca multiidioma', desc: 'ara pots buscar ingredients en català, castellà o anglès.' },
+  { titol: 'Mode cuinar millorat', desc: 'la pantalla ja no s\'apaga mentre cuines.' },
+  { titol: 'Nova tipografia', desc: 'per als títols de les receptes.' },
+];
+
+function mostrarNovetats() {
+  if (localStorage.getItem('novetats_versio') === VERSIO_NOVETATS) return;
+  const llista = document.getElementById('novetats-llista');
+  llista.innerHTML = NOVETATS.map(n =>
+    `<div class="novetats-item"><div class="novetats-dot"></div><div class="novetats-text"><strong>${n.titol}:</strong> ${n.desc}</div></div>`
+  ).join('');
+  document.getElementById('novetats-versio').textContent = 'Versió ' + VERSIO_NOVETATS;
+  document.getElementById('novetats-overlay').classList.add('visible');
+}
+
+function tancarNovetats() {
+  localStorage.setItem('novetats_versio', VERSIO_NOVETATS);
+  document.getElementById('novetats-overlay').classList.remove('visible');
+}
+
+// Si l'auth ja estava feta (no passa per comprovarPassword), mirem novetats directament
+if (localStorage.getItem('receptes_auth') === '1') {
+  mostrarNovetats();
+}
 </script>
 
 <!-- ══════════════════════════════════════
