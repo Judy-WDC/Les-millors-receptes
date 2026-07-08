@@ -1321,9 +1321,27 @@
     .detall-hero { height: 300px; }
     .detall-hero-placeholder { height: 220px; }
     .detall-btn-cuinar { max-width: 280px; }
+    /* Nom de recepta més gran */
+    .detall-nom { font-size: 2rem; }
+    /* Labels de secció més grans (Ingredients, Instruccions, Comentaris) */
+    .detall-seccio-label { font-size: 17px; }
+    /* Stepper compacte en línia amb el label INGREDIENTS */
     .detall-ing-header {
-      flex-direction: column; align-items: flex-start; gap: 10px;
-      margin-bottom: 10px;
+      flex-direction: row; justify-content: flex-start; align-items: center;
+      gap: 12px; margin-bottom: 10px;
+    }
+    .detall-ing-header .detall-seccio-label::after {
+      content: '·'; color: var(--border); margin-left: 12px; font-weight: 400;
+    }
+    .detall-ing-header .racions-stepper { gap: 8px; }
+    .detall-ing-header .racions-btn { width: 26px; height: 26px; font-size: 14px; border-width: 1px; }
+    .detall-ing-header .racions-valor-wrap { min-width: 26px; }
+    .detall-ing-header .racions-valor { font-size: 15px; }
+    .detall-ing-header .racions-label { font-size: 9px; }
+    /* Alinea "Instruccions" amb "Ingredients": mateixa alçada de primera fila */
+    .detall-ing-header { min-height: 26px; }
+    .detall-col-instr > .detall-seccio:first-child > .detall-seccio-label {
+      min-height: 26px; display: flex; align-items: center; margin-bottom: 10px;
     }
   }
 
@@ -2116,7 +2134,7 @@ const API_PYTHON = 'http://localhost:5000';
 // ── Mapa d'usuàries → URL d'Apps Script ──
 const USUARIES = {
   'Judy':   'https://script.google.com/macros/s/AKfycbws2QtQ6jEDVqrAoYYJWu_XE7E2OudMvnTBq96b2-n_4srAAsT9toYnrUm87-6i2rhrOw/exec',
-  'Emilia': 'https://script.google.com/macros/s/AKfycbwmhSvkh1O1G3kQqffbdFZCJcHEO-b_VMf2LeRc5CMnkl3pD-8Y5vfP-yuqKhynrvp8/exec'
+  'Emilia': 'https://script.google.com/macros/s/AKfycbykddop-LNE84U5wGjpsAs25PZplZ0RcvhWMs4n4CVRs_TIwXHg3gIbEQsagzY8PNNe/exec'
 };
 
 let usuariaActiva = localStorage.getItem('usuaria') || '';
