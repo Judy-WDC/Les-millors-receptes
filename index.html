@@ -1269,6 +1269,64 @@
     border: 1.5px solid var(--border-dim);
   }
   .detall-btn-cuinar i { font-size: 20px; }
+
+  /* ── Layout desktop detall: dues columnes ── */
+  .detall-title-row {
+    display: flex; align-items: flex-start; gap: 12px;
+  }
+  .detall-title-left { flex: 1; }
+  .detall-title-actions { display: none; }
+  .detall-dos-cols { display: flex; flex-direction: column; }
+  .detall-col-ing { }
+  .detall-col-instr { }
+  .detall-meta .detall-font { margin-bottom: 0; }
+  .detall-meta .detall-seccio { margin-bottom: 0; display: inline-flex; gap: 4px; flex-wrap: wrap; }
+  .detall-ing-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 8px;
+  }
+  .detall-ing-header .detall-seccio-label { margin-bottom: 0; }
+
+  @media (min-width: 768px) {
+    .detall-title-actions {
+      display: flex; gap: 8px; margin-top: 4px;
+    }
+    .detall-title-actions button {
+      width: 34px; height: 34px; border-radius: 8px;
+      border: 0.5px solid var(--border); background: transparent;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--text-muted); font-size: 16px; cursor: pointer;
+      transition: color 0.2s, border-color 0.2s;
+    }
+    .detall-title-actions button:hover {
+      color: var(--text); border-color: var(--text-muted);
+    }
+    .detall-title-actions button.actiu {
+      background: var(--accent); color: var(--bg); border-color: var(--accent);
+    }
+    .detall-title-actions button svg { width: 18px; height: 18px; display: block; }
+    .detall-meta .btn-cuinar-detall-meta { display: none; }
+    .detall-header-icons { display: none; }
+    .detall-dos-cols {
+      flex-direction: row; gap: 0;
+      margin-top: 1rem; padding-top: 0;
+    }
+    .detall-col-ing {
+      width: 38%; padding-right: 1.5rem;
+    }
+    .detall-col-instr {
+      flex: 1; padding-left: 1.5rem;
+    }
+    .detall-contingut { max-width: 900px; }
+    .detall-hero { height: 300px; }
+    .detall-hero-placeholder { height: 220px; }
+    .detall-btn-cuinar { max-width: 280px; }
+    .detall-ing-header {
+      flex-direction: column; align-items: flex-start; gap: 10px;
+      margin-bottom: 10px;
+    }
+  }
+
   @media (max-width: 600px) {
     .detall-hero { height: 200px; }
     .detall-contingut { padding: 1rem; }
@@ -1366,6 +1424,48 @@
   }
   #panell-portada.actiu { display: flex; }
   /* ── Modal de novetats ── */
+  /* ── Modal de tria d'usuària ── */
+  .config-url-overlay {
+    display: none; position: fixed; inset: 0; z-index: 10000;
+    background: rgba(0,0,0,0.6);
+    align-items: center; justify-content: center; padding: 20px;
+  }
+  .config-url-overlay.visible { display: flex; }
+  .config-url-modal {
+    background: var(--surface); border-radius: 16px; border: 0.5px solid var(--border);
+    width: 100%; max-width: 320px; padding: 28px 24px 24px; text-align: center;
+  }
+  .config-url-modal h3 {
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-size: 19px; font-weight: 500; color: var(--text); margin: 0 0 6px;
+  }
+  .config-url-modal p {
+    font-size: 14px; color: var(--text-dim); line-height: 1.5; margin: 0 0 20px;
+  }
+  .config-user-btns {
+    display: flex; gap: 12px; justify-content: center;
+  }
+  .config-user-btn {
+    flex: 1; padding: 14px 10px; border-radius: 12px;
+    font-size: 16px; font-weight: 500; cursor: pointer;
+    font-family: 'Bricolage Grotesque', sans-serif;
+    border: 1.5px solid var(--border-dim);
+    background: var(--bg); color: var(--text);
+    transition: border-color 0.2s, background 0.2s;
+  }
+  .config-user-btn:hover { border-color: var(--accent); background: var(--surface2); }
+  .config-user-btn.actiu {
+    border-color: var(--accent); background: rgba(245,247,73,0.08);
+    color: var(--accent);
+  }
+  /* Botó d'engranatge per canviar d'usuària */
+  .btn-config-url {
+    background: none; border: none; color: var(--text-muted); cursor: pointer;
+    font-size: 16px; padding: 4px 6px; border-radius: 6px;
+    transition: color 0.2s;
+  }
+  .btn-config-url:hover { color: var(--accent); }
+
   .novetats-overlay {
     display: none; position: fixed; inset: 0; z-index: 9999;
     background: rgba(0,0,0,0.55);
@@ -1600,6 +1700,20 @@
 </script>
 
 <!-- ══════════════════════════════════════
+     MODAL DE TRIA D'USUÀRIA
+══════════════════════════════════════ -->
+<div class="config-url-overlay" id="config-url-overlay">
+  <div class="config-url-modal">
+    <h3>Qui ets?</h3>
+    <p>Tria el teu nom per carregar el teu receptari.</p>
+    <div class="config-user-btns">
+      <button class="config-user-btn" onclick="triarUsuaria('Judy')">Judy</button>
+      <button class="config-user-btn" onclick="triarUsuaria('Emilia')">Emilia</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
      MODAL DE NOVETATS
 ══════════════════════════════════════ -->
 <div class="novetats-overlay" id="novetats-overlay">
@@ -1730,6 +1844,7 @@ if (localStorage.getItem('receptes_auth') === '1') {
   <header>
     <h1>Què vols cuinar avui?</h1>
     <p id="subtitol">Carregant...</p>
+    <button class="btn-config-url" onclick="obrirConfigUrl()" title="Canviar la URL del receptari"><i class="ti ti-settings"></i></button>
 
     <div class="missatge-fora" id="missatge-fora">🌍 Mode fora de casa — les receptes es carreguen des de Google Sheets. Un segon que estem connectant...</div>
   </header>
@@ -1996,8 +2111,47 @@ if (localStorage.getItem('receptes_auth') === '1') {
 
 // URLs — ajusta-les si canvien
 const API_LOCAL  = 'http://localhost:8765/api/receptes';
-const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbws2QtQ6jEDVqrAoYYJWu_XE7E2OudMvnTBq96b2-n_4srAAsT9toYnrUm87-6i2rhrOw/exec';
 const API_PYTHON = 'http://localhost:5000';
+
+// ── Mapa d'usuàries → URL d'Apps Script ──
+const USUARIES = {
+  'Judy':   'https://script.google.com/macros/s/AKfycbws2QtQ6jEDVqrAoYYJWu_XE7E2OudMvnTBq96b2-n_4srAAsT9toYnrUm87-6i2rhrOw/exec',
+  'Emilia': 'https://script.google.com/macros/s/AKfycbwmhSvkh1O1G3kQqffbdFZCJcHEO-b_VMf2LeRc5CMnkl3pD-8Y5vfP-yuqKhynrvp8/exec'
+};
+
+let usuariaActiva = localStorage.getItem('usuaria') || '';
+let SHEETS_URL    = USUARIES[usuariaActiva] || '';
+
+// ── Tria d'usuària ──
+function obrirConfigUrl() {
+  // Marca el botó actiu si ja hi ha tria
+  document.querySelectorAll('.config-user-btn').forEach(btn => {
+    btn.classList.toggle('actiu', btn.textContent === usuariaActiva);
+  });
+  document.getElementById('config-url-overlay').classList.add('visible');
+}
+function tancarConfigUrl() {
+  document.getElementById('config-url-overlay').classList.remove('visible');
+}
+function triarUsuaria(nom) {
+  const url = USUARIES[nom];
+  if (!url) {
+    alert('El receptari de ' + nom + ' encara no està configurat!');
+    return;
+  }
+  usuariaActiva = nom;
+  SHEETS_URL = url;
+  localStorage.setItem('usuaria', nom);
+  tancarConfigUrl();
+  // Recarrega les dades amb la nova URL
+  receptes = []; oberts.clear();
+  document.getElementById('subtitol').textContent = 'Carregant...';
+  carregar();
+}
+// Si no hi ha usuària triada, mostra el modal al cap d'un moment
+if (!usuariaActiva || !SHEETS_URL) {
+  window.addEventListener('DOMContentLoaded', () => setTimeout(obrirConfigUrl, 400));
+}
 
 // Categories — font única de veritat; afegir aquí per reflectir-ho a tot arreu
 const CAT_OPCIONS = ['Untables', 'Untables dolços', 'Cremes', 'Currys', 'Barretes', 'Boletes energètiques', 'Altres'];
@@ -2667,8 +2821,8 @@ function obrirDetall(nom, desDePopstate) {
   }
 
   const ingSecHTML = ckTotal ? `<div class="detall-seccio">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-      <div class="detall-seccio-label" style="margin-bottom:0;">Ingredients</div>
+    <div class="detall-ing-header">
+      <div class="detall-seccio-label">Ingredients</div>
       ${racionsHTML}
     </div>
     <div class="ck-progress" id="det-ck-prog-wrap-${nomId}" style="${ckEstat.actiu ? '' : 'display:none'}">
@@ -2751,27 +2905,43 @@ function obrirDetall(nom, desDePopstate) {
         </button>
       </div>
     </div>
-    <div class="detall-contingut" style="padding-bottom:0;">
-      <div class="detall-nom">${nom}</div>
-      <div class="detall-meta">
-        <span class="badge-cat" style="${badgeStyle(cat)}">${cat}</span>
-        <div class="card-stars">${starsHTML}</div>
-        <button class="btn-cuinar-detall-meta${ckEstat.actiu ? ' actiu' : ''}" onclick="toggleCookMode('${nomId}','${nomEsc}')" title="Mode cuinar" aria-label="Mode cuinar">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 13.87A4 4 0 0 1 7.41 6a5.11 5.11 0 0 1 1.05-1.54 5 5 0 0 1 7.08 0A5.11 5.11 0 0 1 16.59 6 4 4 0 0 1 18 13.87V21H6Z"/><line x1="6" y1="17" x2="18" y2="17"/></svg>
-        </button>
-      </div>
-    </div>
     ${heroHTML}
     <div class="detall-contingut">
-      ${ingSecHTML}
-      ${instrHTML}
-      ${comHTML}
-      ${etHTML}
-      ${fontHTML}
-      <button class="detall-btn-cuinar${ckEstat.actiu ? ' actiu' : ''}" id="det-ck-btn-${nomId}" onclick="toggleCookMode('${nomId}','${nomEsc}')">
-        <i class="ti ti-soup" aria-hidden="true"></i>
-        <span id="det-ck-btn-text-${nomId}">${ckEstat.actiu ? 'Sortir del mode cuinar' : 'Mode cuinar'}</span>
-      </button>
+      <div class="detall-title-row">
+        <div class="detall-title-left">
+          <div class="detall-nom">${nom}</div>
+          <div class="detall-meta">
+            <span class="badge-cat" style="${badgeStyle(cat)}">${cat}</span>
+            <div class="card-stars">${starsHTML}</div>
+            ${fontHTML}
+            ${etHTML}
+            <button class="btn-cuinar-detall-meta js-ck-toggle${ckEstat.actiu ? ' actiu' : ''}" onclick="toggleCookMode('${nomId}','${nomEsc}')" title="Mode cuinar" aria-label="Mode cuinar">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 13.87A4 4 0 0 1 7.41 6a5.11 5.11 0 0 1 1.05-1.54 5 5 0 0 1 7.08 0A5.11 5.11 0 0 1 16.59 6 4 4 0 0 1 18 13.87V21H6Z"/><line x1="6" y1="17" x2="18" y2="17"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="detall-title-actions">
+          <button class="js-ck-toggle${ckEstat.actiu ? ' actiu' : ''}" onclick="toggleCookMode('${nomId}','${nomEsc}')" title="Mode cuinar" aria-label="Mode cuinar">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 13.87A4 4 0 0 1 7.41 6a5.11 5.11 0 0 1 1.05-1.54 5 5 0 0 1 7.08 0A5.11 5.11 0 0 1 16.59 6 4 4 0 0 1 18 13.87V21H6Z"/><line x1="6" y1="17" x2="18" y2="17"/></svg>
+          </button>
+          <button onclick="detallEditar('${nomId}','${nomEsc}')" title="Editar recepta" aria-label="Editar recepta">
+            <i class="ti ti-edit" aria-hidden="true"></i>
+          </button>
+        </div>
+      </div>
+      <div class="detall-dos-cols">
+        <div class="detall-col-ing">
+          ${ingSecHTML}
+          <button class="detall-btn-cuinar${ckEstat.actiu ? ' actiu' : ''}" id="det-ck-btn-${nomId}" onclick="toggleCookMode('${nomId}','${nomEsc}')">
+            <i class="ti ti-soup" aria-hidden="true"></i>
+            <span id="det-ck-btn-text-${nomId}">${ckEstat.actiu ? 'Sortir del mode cuinar' : 'Mode cuinar'}</span>
+          </button>
+        </div>
+        <div class="detall-col-instr">
+          ${instrHTML}
+          ${comHTML}
+        </div>
+      </div>
     </div>
   `;
 
@@ -2921,6 +3091,11 @@ const PLACEHOLDER_IMG = 'recepta-placeholder.png';
 
 async function carregar() {
   if (carregant) return; // evita crides simultànies que penjarien el navegador
+  // Si no hi ha URL configurada i estem en mode fora, no intentem carregar
+  if (mode !== 'local' && !SHEETS_URL) {
+    document.getElementById('subtitol').textContent = 'Configura la URL del teu receptari per començar';
+    return;
+  }
   carregant = true;
   try {
     let data;
@@ -3099,6 +3274,7 @@ function toggleCookMode(nomId, nom) {
 
   if (detBtn)     detBtn.classList.toggle('actiu', estat.actiu);
   if (detBtnText) detBtnText.textContent = estat.actiu ? 'Sortir del mode cuinar' : 'Mode cuinar';
+  document.querySelectorAll('#panell-detall .js-ck-toggle').forEach(b => b.classList.toggle('actiu', estat.actiu));
   if (detLlista)  detLlista.classList.toggle('cuinant', estat.actiu);
   if (detProgWrap) detProgWrap.style.display = estat.actiu ? '' : 'none';
   if (detLlistaInstr) detLlistaInstr.classList.toggle('cuinant', estat.actiu);
@@ -4058,7 +4234,7 @@ async function treureFotoRecepta(nomId, nom) {
 
 // Preescalfament silenciós: desperta el servidor d'Apps Script en segon pla
 // perquè quan l'usuari canviï a mode "fora de casa" ja estigui actiu
-fetch(SHEETS_URL).catch(() => {});
+if (SHEETS_URL) fetch(SHEETS_URL).catch(() => {});
 
 // Carrega inicial + refresca cada 30s, però no si hi ha cards obertes o formularis en edició
 carregar();
