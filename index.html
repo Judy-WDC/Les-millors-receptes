@@ -898,13 +898,13 @@
   /* Botó desar */
   .btn-desar {
     align-self: flex-end; padding: 0.5rem 1.2rem;
-    background: var(--verd); color: white; border: none;
+    background: #E2E356; color: var(--bg); border: none;
     border-radius: 8px; font-family: 'Poppins', sans-serif;
     font-size: 0.82rem; font-weight: 500; cursor: pointer;
     transition: background 0.2s, transform 0.15s;
   }
-  .btn-desar:hover { background: #2D5A3F; transform: translateY(-1px); }
-  .btn-desar:disabled { background: #1e3a28; color: #4a7a5a; cursor: not-allowed; transform: none; }
+  .btn-desar:hover { background: #D0D142; transform: translateY(-1px); }
+  .btn-desar:disabled { background: #33351c; color: #7f8148; cursor: not-allowed; transform: none; }
 
   /* Botons acció principal */
   .accions { display: flex; gap: 0.75rem; }
@@ -912,10 +912,10 @@
     flex: 1; padding: 0.8rem 1.2rem; border: none;
     border-radius: 10px; font-family: 'Poppins', sans-serif;
     font-size: 0.9rem; font-weight: 500; cursor: pointer;
-    transition: all 0.2s; background: var(--verd); color: white;
+    transition: all 0.2s; background: #E2E356; color: var(--bg);
   }
-  .btn-primary:hover { background: #2D5A3F; transform: translateY(-1px); }
-  .btn-primary:disabled { background: #1e3a28; color: #4a7a5a; cursor: not-allowed; transform: none; }
+  .btn-primary:hover { background: #D0D142; transform: translateY(-1px); }
+  .btn-primary:disabled { background: #33351c; color: #7f8148; cursor: not-allowed; transform: none; }
   .btn-secondary {
     flex: 1; padding: 0.8rem 1.2rem;
     border: 1.5px solid var(--border);
@@ -991,13 +991,13 @@
   .btn-edit-cancel:hover { border-color: var(--border); color: var(--text-dim); }
   .btn-edit-desar {
     padding: 0.4rem 1.1rem;
-    background: var(--verd); border: none;
+    background: #E2E356; border: none;
     border-radius: 8px; font-family: 'Poppins', sans-serif;
-    font-size: 0.8rem; font-weight: 500; color: white; cursor: pointer;
+    font-size: 0.8rem; font-weight: 500; color: var(--bg); cursor: pointer;
     transition: background 0.2s;
   }
-  .btn-edit-desar:hover { background: #2D5A3F; }
-  .btn-edit-desar:disabled { background: #1e3a28; color: #4a7a5a; cursor: not-allowed; }
+  .btn-edit-desar:hover { background: #D0D142; }
+  .btn-edit-desar:disabled { background: #33351c; color: #7f8148; cursor: not-allowed; }
 
   .btn-edit-eliminar {
     background: transparent;
@@ -1407,8 +1407,8 @@
   }
   #panell-scan .btn-eliminar:hover { background: #8B3030; color: white; }
 
-  #panell-scan .btn-desar:disabled { background: #1e3a28; color: #4a7a5a; }
-  #panell-scan .btn-primary:disabled { background: #1e3a28; color: #4a7a5a; }
+  #panell-scan .btn-desar:disabled { background: #33351c; color: #7f8148; }
+  #panell-scan .btn-primary:disabled { background: #33351c; color: #7f8148; }
 
   #panell-scan .btn-secondary {
     color: #d4e8ee; border-color: rgba(255,255,255,0.2); background: transparent;
@@ -2026,8 +2026,8 @@ if (localStorage.getItem('receptes_auth') === '1') {
             <div class="cua" id="cua"></div>
 
             <div class="accions">
-              <button class="btn-primary" id="btnProcessar" disabled>✨ Processar receptes</button>
-              <button class="btn-secondary" id="btnExportar" disabled>⬇️ Exportar Excel</button>
+              <button class="btn-primary" id="btnProcessar" disabled>Processar receptes</button>
+              <button class="btn-secondary" id="btnExportar" disabled>⬇️ Exportar Excel <span style="font-size:0.92em; opacity:0.8; font-weight:normal;">(només si vols extreure les receptes a un excel)</span></button>
             </div>
           </div>
         </div>
@@ -2101,7 +2101,7 @@ if (localStorage.getItem('receptes_auth') === '1') {
           <div id="manual-error" style="display:none;font-size:0.82rem;color:#E57373;margin-top:-0.25rem"></div>
           <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:0.25rem">
             <button class="btn-secondary" style="flex:0;padding:0.5rem 1.1rem;font-size:0.85rem" onclick="toggleFormManual()">Cancel·lar</button>
-            <button class="btn-desar" onclick="desarManual()">Desar al receptari →</button>
+            <button class="btn-desar" onclick="desarManual()">Desar al receptari</button>
           </div>
         </div>
       </div>
@@ -4280,7 +4280,9 @@ async function comprovarServidor() {
     const r = await fetch(`${API_PYTHON}/ping`, { signal: AbortSignal.timeout(2000) });
     if (r.ok) { avisServidor.classList.remove('visible'); return true; }
   } catch {}
-  avisServidor.classList.add('visible');
+  // Amb l'OCR de Google Drive disponible, el servidor Python ja no és necessari:
+  // només mostrem l'avís si no hi ha cap Apps Script configurat
+  if (!SHEETS_URL) avisServidor.classList.add('visible');
   return false;
 }
 comprovarServidor();
@@ -4449,7 +4451,7 @@ function renderItem(item) {
         </div>
       </div>
       <button class="btn-desar" id="btn-desar-${idx}" onclick="desarRecepta(${idx})">
-        Desar al Receptari →
+        Desar al Receptari
       </button>
     </div>`;
   cua.appendChild(div);
@@ -4489,7 +4491,10 @@ btnProcessar.addEventListener('click', async () => {
   let servidorOk = false;
   if (hiHaImatges) {
     servidorOk = await comprovarServidor();
-    if (!servidorOk) mostrarToast('⚠️ Inicia el servidor Python per processar les fotografies');
+    if (!servidorOk) {
+      if (SHEETS_URL) mostrarToast('☁️ Servidor local no disponible — usarem l\'OCR de Google Drive');
+      else mostrarToast('⚠️ Inicia el servidor Python per processar les fotografies');
+    }
   }
   for (const item of pendents) {
     const { idx, tipus } = item;
@@ -4511,10 +4516,11 @@ btnProcessar.addEventListener('click', async () => {
   actualitzarBotons();
 });
 
-// ── OCR via servidor Python ──
+// ── OCR: via servidor Python (local) o via Apps Script + Google Drive (núvol) ──
 async function processarImatge(item, servidorOk) {
   const { idx, file } = item;
-  if (!servidorOk) throw new Error('Servidor Python no disponible per a l\'OCR');
+  if (!servidorOk && !SHEETS_URL) throw new Error('Servidor Python no disponible per a l\'OCR');
+  if (!servidorOk) return processarImatgeDrive(item);
   setEstat(idx, 'Extraient text de la imatge…');
   setBadge(idx, 'processant', 'Escannejant…');
   const base64 = await new Promise((res, rej) => {
@@ -4543,6 +4549,43 @@ async function processarImatge(item, servidorOk) {
   const catSugImg = detectarCategoriaScan(nomImg, catDef);
   if (catSugImg) selCat.value = catSugImg;
   item.status = 'fet';
+  setBadge(idx, 'fet', '✓ Escannejat');
+  setEstat(idx, 'Revisa i desa al receptari');
+  document.getElementById(`form-${idx}`).classList.add('visible');
+}
+
+// ── OCR al núvol: envia la imatge a l'Apps Script, que la converteix
+//    en un Google Doc temporal amb OCR i en retorna el text ──
+async function processarImatgeDrive(item) {
+  const { idx, file } = item;
+  setEstat(idx, 'Extraient text amb Google Drive…');
+  setBadge(idx, 'processant', 'Escannejant (núvol)…');
+  // Redimensiona per no enviar fotos de molts MB (l'OCR no ho necessita)
+  const dataUrl = await redimensionaImatge(file, 1600, 0.85);
+  // POST amb text/plain: evita el preflight CORS i permet llegir la resposta
+  const resp = await fetch(`${SHEETS_URL}?accio=ocr`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: dataUrl,
+  });
+  if (!resp.ok) throw new Error('Error de connexió amb l\'Apps Script');
+  const dades = await resp.json();
+  if (!dades.ok) throw new Error(dades.error || 'L\'OCR de Drive ha fallat');
+  const text = (dades.text || '').trim();
+  if (!text) throw new Error('No s\'ha trobat text a la imatge');
+  // A partir d'aquí, mateix camí que els PDF: extracció local del text
+  const fontDefecte = document.getElementById('fontDefecte').value || '';
+  const recepta = extraccioLocal(text, fontDefecte);
+  const nomNorm = recepta.nom.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const catDef  = document.getElementById('catDefecte').value || '';
+  const selCat  = document.getElementById(`cat-${idx}`);
+  const catSug  = detectarCategoriaScan(nomNorm, catDef);
+  if (catSug) selCat.value = catSug;
+  document.getElementById(`nom-${idx}`).value  = recepta.nom || '';
+  document.getElementById(`ing-${idx}`).value  = recepta.ingredients || '';
+  document.getElementById(`instruccions-${idx}`).value = recepta.instruccions || '';
+  document.getElementById(`font-${idx}`).value = recepta.font || '';
+  item.recepta = recepta; item.status = 'fet';
   setBadge(idx, 'fet', '✓ Escannejat');
   setEstat(idx, 'Revisa i desa al receptari');
   document.getElementById(`form-${idx}`).classList.add('visible');
@@ -4626,55 +4669,109 @@ function normalitzarTitol(titol) {
   return net.charAt(0).toUpperCase() + net.slice(1);
 }
 
+// Un "verb de cuina": imperatiu de vosaltres (peleu, salteu-hi, tapeu-les...)
+// o infinitiu (pelar, coure, afegir...)
+function esVerbCuina(paraula) {
+  const p = (paraula || '').toLowerCase();
+  if (/^[a-zà-ú·ç]+(eu|iu)(-[a-zà-ú·]+)?$/.test(p)) return true;   // imperatiu (+pronom)
+  if (/^[a-zà-ú·ç]{3,}(ar|er|re|ir)(-[a-zà-ú·]+)?$/.test(p)) return true; // infinitiu
+  return false;
+}
+
 function extraccioLocal(text, fontDefecte) {
-  const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
-  const nom = normalitzarTitol(lines[0]);
+  let lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+  const linesOriginals = lines.slice(); // per a detectarFont
 
-  // Intenta trobar el bloc "Ingredients" (entre capçalera i la següent secció)
-  const reCapcalera = /^(ingredients?|ingredientes?|ingr\.?)\s*:?\s*$/i;
-  const reSeccio    = /^(preparació|preparación|elaboració|mètode|method|instruccions?|passos?|directions?|steps?)\s*:?\s*$/i;
+  // ── Soroll de l'OCR: línies d'1-2 caràcters sense lletres ("0", "•", "—"...) ──
+  lines = lines.filter(l => !(l.length <= 2 && !/[a-zà-úA-ZÀ-Ú]/.test(l)));
 
-  const idxInici = lines.findIndex(l => reCapcalera.test(l));
-
-  let candidats = [];
-
-  if (idxInici !== -1) {
-    // Tenim un bloc d'ingredients explícit: agafem totes les línies fins a la següent secció
-    const bloc = [];
-    for (let i = idxInici + 1; i < lines.length; i++) {
-      if (reSeccio.test(lines[i])) break;
-      bloc.push(lines[i]);
+  // ── Títol: primera línia curta "de títol" (majoritàriament majúscules si n'hi ha) ──
+  let idxTitol = 0;
+  for (let i = 0; i < Math.min(3, lines.length); i++) {
+    const l = lines[i];
+    const lletres = l.replace(/[^a-zà-úA-ZÀ-Ú]/g, '');
+    if (l.length <= 70 && lletres.length >= 4 && lletres === lletres.toUpperCase()) {
+      idxTitol = i; break;
     }
-    // Neteja: treu el guionet/bullet inicial i línies massa llargues (probablement notes)
-    candidats = bloc
-      .map(l => l.replace(/^[\-–—•*·]\s*/, '').trim())
-      .filter(l => l.length > 0 && l.length < 120);
+  }
+  const nom = normalitzarTitol(lines[idxTitol]);
+  lines = lines.filter((_, i) => i !== idxTitol);
+
+  // ── Capçaleres explícites (si el llibre en té, les aprofitem) ──
+  const reCapIng   = /^(ingredients?|ingredientes?|ingr\.?)(\s*:)?(\s.{0,30})?\s*$/i;
+  const reCapInstr = /^(preparació|preparación|elaboració|elaboración|mètode|method|instruccions?|instrucciones|passos?|pasos?|directions?|steps?|com es fa|cómo se hace)(\s*:)?(\s.{0,25})?\s*$/i;
+
+  const idxCapIng   = lines.findIndex(l => reCapIng.test(l));
+  const idxCapInstr = lines.findIndex(l => reCapInstr.test(l));
+
+  // ── Detecció del primer pas numerat: número + verb de cuina ──
+  // (els passos comencen per "1" i van seguits d'un verb: "1 Peleu i talleu...")
+  let idxPrimerPas = -1;
+  for (let i = 0; i < lines.length; i++) {
+    const m = lines[i].match(/^([1-9]\d?)[\.\)]?\s+(\S+)/);
+    if (m && parseInt(m[1]) === 1 && esVerbCuina(m[2])) { idxPrimerPas = i; break; }
+  }
+  // Pla B: sense numeració, busquem la primera frase que comenci amb un verb
+  // imperatiu de cuina ("Renteu les verdures i talleu-les...")
+  if (idxPrimerPas === -1) {
+    for (let i = 0; i < lines.length; i++) {
+      const primera = (lines[i].match(/^(\S+)/) || [])[1] || '';
+      if (lines[i].length > 25 && /^[a-zà-úA-ZÀ-Ú·ç]+(eu|iu)(-[a-zà-ú·]+)?$/i.test(primera)) {
+        idxPrimerPas = i; break;
+      }
+    }
   }
 
-  if (candidats.length === 0) {
-    // Fallback: cerca línies que semblin ingredients per tot el document
-    const reIngredient = /^[\-•*·]|^\d+[\s.,\/]|^(mig|mitja|la meitat|un quart|un terç|una mica|un raig|un grapat|al gust|un pessic|uns quants|unes quantes)\b|\b(g|kg|ml|l|cl|dl|tasses?|cullerades?|culleradetes?|unitats?|grams?|mls?|llaunes?|pots?|brics?|fulles?|branques?|grans?|dents?|rodanxes?)\b/i;
-    candidats = lines.filter(l => reIngredient.test(l))
-      .map(l => l.replace(/^[\-–—•*·]\s*/, '').trim())
-      .slice(0, 30);
-  }
+  // ── On comencen les instruccions? Capçalera explícita o primer pas detectat ──
+  let idxInstr = -1, saltaCapcalera = false;
+  if (idxCapInstr !== -1) { idxInstr = idxCapInstr; saltaCapcalera = true; }
+  else if (idxPrimerPas !== -1) idxInstr = idxPrimerPas;
 
-  const ingredients = candidats.length > 0 ? candidats.join(' · ') : lines.slice(1, 8).join(' · ');
-
-  // Extreu el bloc d'instruccions (línies després de la capçalera de secció)
-  const idxInstr = lines.findIndex(l => reSeccio.test(l));
+  // ── Bloc d'instruccions: passos numerats + línies de continuació enganxades ──
   let instruccions = '';
   if (idxInstr !== -1) {
-    const blocInstr = [];
-    for (let i = idxInstr + 1; i < lines.length; i++) {
-      const l = lines[i].replace(/^[\d]+[\.\)]\s*/, '').trim();
-      if (l.length > 0) blocInstr.push(l);
+    const passos = [];
+    const inici = saltaCapcalera ? idxInstr + 1 : idxInstr;
+    for (let i = inici; i < lines.length; i++) {
+      const m = lines[i].match(/^([1-9]\d?)[\.\)]?\s+(.*)/);
+      if (m) passos.push({ num: m[1], text: m[2].trim() });
+      else if (passos.length > 0) passos[passos.length - 1].text += ' ' + lines[i]; // continuació
+      else passos.push({ num: null, text: lines[i] }); // instruccions sense numerar
     }
-    instruccions = blocInstr.join('\n');
+    instruccions = passos.map(p => (p.num ? p.num + '. ' : '') + p.text).join('\n');
   }
 
-  const font = detectarFont(lines, fontDefecte);
-  return { nom, ingredients, instruccions, font };
+  // ── Bloc d'ingredients: entre capçalera (o inici) i les instruccions ──
+  const iniciIng = idxCapIng !== -1 ? idxCapIng + 1 : 0;
+  const fiIng    = idxInstr !== -1 ? idxInstr : lines.length;
+  let racions = '';
+  let candidats = [];
+  for (let i = iniciIng; i < fiIng; i++) {
+    if (i === idxCapInstr) continue;
+    let l = lines[i].replace(/^[\-–—•*·]\s*/, '').trim();
+    if (!l) continue;
+    // Metadades (racions, temps): les extraiem i conservem el que quedi de la línia
+    // (l'OCR de vegades hi fusiona el primer ingredient: "4 RACIONS 40 MINUTS 500 g de...")
+    if (/(racions?|persones?|porcions?|comensals?|minuts?|min\.?|hores?)/i.test(l)) {
+      const mRac = l.match(/(\d+)\s*(racions?|persones?|porcions?|comensals?)/i);
+      if (mRac) racions = racions || mRac[1];
+      l = l
+        .replace(/\d+\s*(racions?|persones?|porcions?|comensals?)/gi, '')
+        .replace(/\d+[\-–]\d+\s*(minuts?|min\.?|hores?|h\b)/gi, '')
+        .replace(/\d+\s*(minuts?|min\.?|hores?|h\b)/gi, '')
+        .trim();
+      if (!l) continue;
+    }
+    // Descarta la descripció d'entrada: frases llargues acabades en punt
+    if (l.length >= 45 && /\.\s*$/.test(l)) continue;
+    if (l.length >= 60 && /\.\s+[A-ZÀ-Ú]/.test(l)) continue; // diverses frases seguides
+    if (l.length > 120) continue;
+    candidats.push(l);
+  }
+  const ingredients = candidats.length > 0 ? candidats.join(' · ') : lines.slice(1, 8).join(' · ');
+
+  const font = detectarFont(linesOriginals, fontDefecte);
+  return { nom, ingredients, instruccions, racions, font };
 }
 
 // ── Desar a Google Sheets ──
@@ -4718,6 +4815,9 @@ async function desarRecepta(idx) {
   const ingParsedScan = parseAllIngredients(ingRawScan);
   const ingJSONScan = ingParsedScan.length ? serializeIngredients(ingParsedScan) : ingRawScan;
 
+  // Racions detectades per l'analitzador (si n'hi havia a la foto/document)
+  const racionsScan = items[idx]?.recepta?.racions || '';
+
   const recepta = {
     nom:          document.getElementById(`nom-${idx}`).value.trim(),
     categoria:    document.getElementById(`cat-${idx}`).value,
@@ -4725,6 +4825,7 @@ async function desarRecepta(idx) {
     font:         fontValue,
     etiquetes:    normalitzarEtiquetes(document.getElementById(`etiquetes-${idx}`)?.value || ''),
     instruccions: document.getElementById(`instruccions-${idx}`)?.value.trim() || '',
+    racions:      racionsScan,
   };
   items[idx].recepta = recepta;
 
@@ -4752,7 +4853,7 @@ async function desarRecepta(idx) {
     // Refresca el cercador automàticament per reflectir la nova recepta
     setTimeout(() => carregar(), 2000);
   } catch (e) {
-    btn.disabled = false; btn.textContent = 'Desar al Receptari →';
+    btn.disabled = false; btn.textContent = 'Desar al Receptari';
     mostrarToast(`❌ Error en desar: ${e.message}`);
     return;
   }
@@ -4923,7 +5024,7 @@ async function confirmarDesarManual() {
     mostrarToast('❌ Error en desar: ' + e.message);
   } finally {
     btn.disabled = false;
-    btn.textContent = 'Desar al receptari →';
+    btn.textContent = 'Desar al receptari';
   }
 }
 // ══════════════════════════════════════════════
