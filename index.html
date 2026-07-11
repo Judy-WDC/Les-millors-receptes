@@ -734,7 +734,7 @@
     font-weight: 500; text-transform: uppercase;
     letter-spacing: 0.06em;
   }
-  input[type=text], input[type=number], select {
+  input[type=text], input[type=number], input[type=url], select {
     width: 100%; padding: 0.6rem 0.9rem;
     border: 1.5px solid var(--border-dim);
     border-radius: 8px; font-family: 'Poppins', sans-serif;
@@ -745,10 +745,10 @@
   input[type=number]::-webkit-inner-spin-button,
   input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
   input[type=number] { -moz-appearance: textfield; }
-  input[type=text]:focus, input[type=number]:focus, select:focus {
+  input[type=text]:focus, input[type=number]:focus, input[type=url]:focus, select:focus {
     outline: none; border-color: var(--accent);
   }
-  input[type=text]::placeholder, input[type=number]::placeholder { color: var(--text-muted); }
+  input[type=text]::placeholder, input[type=number]::placeholder, input[type=url]::placeholder { color: var(--text-muted); }
   .select-wrap { position: relative; }
   .cat-nova-wrap { display: flex; flex-direction: column; gap: 6px; }
   .cat-nova-input {
@@ -855,7 +855,7 @@
   .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
   .form-group { display: flex; flex-direction: column; gap: 0.25rem; }
   .form-group.full { grid-column: 1/-1; }
-  .form-group input[type=text], .form-group input[type=number], .form-group select {
+  .form-group input[type=text], .form-group input[type=number], .form-group input[type=url], .form-group select {
     font-size: 0.82rem; padding: 0.5rem 0.8rem;
   }
   textarea {
@@ -1523,6 +1523,22 @@
   }
   .novetats-btn:hover { background: rgba(245,247,73,0.06); }
 
+  /* Botons del diàleg de recepta duplicada */
+  .dup-btn {
+    width: 100%; padding: 11px 14px; border-radius: 10px;
+    background: var(--surface-2, rgba(255,255,255,0.04));
+    color: var(--text); border: 0.5px solid var(--border);
+    font-size: 13.5px; cursor: pointer; text-align: left;
+    transition: background 0.2s, border-color 0.2s;
+    font-family: inherit; line-height: 1.4;
+  }
+  .dup-btn:hover { background: rgba(255,255,255,0.07); }
+  .dup-btn-primari {
+    background: transparent; border: 1.5px solid var(--accent); color: var(--accent);
+  }
+  .dup-btn-primari:hover { background: rgba(245,247,73,0.06); }
+  .dup-btn-cancel { color: var(--text-muted); }
+
   .portada-container {
     width: 100%;
     max-width: 400px;
@@ -1713,6 +1729,8 @@
       localStorage.setItem('receptes_auth', '1');
       document.getElementById('passwordScreen').style.display = 'none';
       mostrarNovetats();
+      // Si l'app s'ha obert des d'un "Compartir", ara reprenem la importació
+      if (typeof processarUrlCompartida === 'function') setTimeout(processarUrlCompartida, 400);
     } else {
       document.getElementById('passwordError').textContent = 'Contrasenya incorrecta';
       document.getElementById('passwordInput').value = '';
@@ -1756,12 +1774,12 @@
 // Canvia VERSIO_NOVETATS i la llista per mostrar
 // el modal la pròxima vegada que l'usuària obri l'app.
 // ══════════════════════════════════════════════
-const VERSIO_NOVETATS = '2.4';
+const VERSIO_NOVETATS = '2.5';
 const NOVETATS = [
   { titol: 'Panell de novetats', desc: 'ja el tenim, per ensenyar-vos les noves meravelles de l\'aplicació! Hehehe!' },
   { titol: 'Cerca multiidioma', desc: 'ara pots buscar ingredients en català, castellà o anglès.' },
   { titol: 'Mode cuinar millorat', desc: 'la pantalla ja no s\'apaga mentre cuines.' },
-  { titol: 'Nova tipografia', desc: 'per als títols de les receptes.' },
+  { titol: 'Importar des d\'un enllaç', desc: 'enganxa l\'adreça d\'una web de cuina o d\'un vídeo de YouTube (amb la recepta a la descripció) i la recepta s\'importa sola. La trobaràs a la pestanya "Afegir".' },
 ];
 
 function mostrarNovetats() {
@@ -1984,7 +2002,7 @@ if (localStorage.getItem('receptes_auth') === '1') {
 <div id="panell-scan" class="panell">
   <header>
     <h1>Afegir receptes</h1>
-    <p>Puja fotografies, documents PDF o Word i desa-les directament al receptari</p>
+    <p>Puja fotografies, documents PDF o Word, importa-les des d'un enllaç, o entra-les manualment</p>
   </header>
 
   <div class="contenidor">
@@ -2033,6 +2051,36 @@ if (localStorage.getItem('receptes_auth') === '1') {
               <button class="btn-primary" id="btnProcessar" disabled>Processar receptes</button>
               <button class="btn-secondary" id="btnExportar" disabled>Exportar Excel <span style="font-size:0.92em; opacity:0.8; font-weight:normal;">(només si vols extreure les receptes a un excel)</span></button>
             </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="contenidor" style="margin-top:1.75rem">
+    <div class="seccio">
+      <div class="col-header" id="btnEnllacToggle" onclick="toggleFormEnllac()" style="cursor:pointer;user-select:none;display:flex;align-items:center;justify-content:space-between;border-radius:14px;transition:border-radius 0.35s">
+        <div>
+          <h3>Receptes des d'un enllaç</h3>
+          <p>Webs de receptes o vídeos de YouTube.</p>
+        </div>
+        <svg id="enllac-arrow" style="flex-shrink:0;color:var(--text-muted);transition:transform 0.3s;margin-left:12px" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+      </div>
+      <div class="form-manual-wrap" id="formEnllacWrap">
+        <div class="form-manual-inner">
+          <div class="col-body" style="border-radius:0 0 14px 14px;border-top:none;margin-top:0">
+            <div class="form-row">
+              <div class="form-group full">
+                <label>Enllaç de la recepta</label>
+                <input type="url" id="urlImport" placeholder="https://…  (web de cuina o vídeo de YouTube)"
+                  onkeydown="if(event.key==='Enter'){importarEnllac();event.preventDefault()}">
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-bottom:0.25rem">
+              <p style="font-size:0.78rem;color:var(--text-muted);margin:0;flex:1;min-width:220px">💡 Als vídeos de YouTube, només funciona si la recepta és escrita a la descripció del vídeo.</p>
+              <button class="btn-primary" id="btnImportarUrl" onclick="importarEnllac()" style="flex-shrink:0">Importar recepta</button>
+            </div>
+            <div class="cua" id="cuaEnllac"></div>
           </div>
         </div>
       </div>
@@ -4027,6 +4075,16 @@ async function desarEdicio(nomId, nomOriginal) {
 async function confirmarDesarEdicio(nomId, nomOriginal, ingJSON) {
   if (!ingJSON && window._ingPreviewJSON) ingJSON = window._ingPreviewJSON;
 
+  // Si s'ha canviat el nom, comprovem que el nou no xoqui amb cap altra recepta
+  const nomCampEdit = document.getElementById('edit-nom-' + nomId);
+  const nomIntent = nomCampEdit.value.trim();
+  if (nomNormalitzat(nomIntent) !== nomNormalitzat(nomOriginal) && existeixRecepta(nomIntent, nomOriginal)) {
+    const decisio = await mostrarDialegDuplicat(nomIntent);
+    if (decisio === 'cancelar') return;
+    if (decisio === 'canviar') { nomCampEdit.focus(); nomCampEdit.select(); return; }
+    nomCampEdit.value = nomAmbDistintiu(nomIntent);
+  }
+
   const btn = document.getElementById('edit-btn-' + nomId);
   btn.disabled = true;
   btn.textContent = 'Desant…';
@@ -4371,14 +4429,16 @@ function afegirFitxers(files) {
 }
 
 function iconaTipus(tipus) {
-  if (tipus === 'pdf')  return '📕';
-  if (tipus === 'docx') return '📘';
+  if (tipus === 'pdf')    return '📕';
+  if (tipus === 'docx')   return '📘';
+  if (tipus === 'enllac') return '🔗';
   return null;
 }
 function etiquetaTipus(tipus) {
   if (tipus === 'imatge') return '';   // la miniatura ja ho diu tot
   if (tipus === 'pdf')    return '📕 PDF';
   if (tipus === 'docx')   return '📘 Word';
+  if (tipus === 'enllac') return '🔗 Enllaç';
 }
 function detectarCategoriaScan(nom, catDefecte) {
   const n = nom.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
@@ -4469,7 +4529,7 @@ function renderItem(item) {
         <span class="badge pendent" id="badge-${idx}">Pendent</span>
       </div>
       <div class="targeta-accions">
-        ${etiquetaTipus(tipus) ? `<span style="font-size:0.7rem;color:var(--text-muted);font-weight:500">${etiquetaTipus(tipus)}</span>` : ''}
+        ${(item.etiqueta || etiquetaTipus(tipus)) ? `<span style="font-size:0.7rem;color:var(--text-muted);font-weight:500">${item.etiqueta || etiquetaTipus(tipus)}</span>` : ''}
         <button class="btn-eliminar" onclick="eliminarItem(${idx})">no, aquesta no!</button>
       </div>
     </div>
@@ -4506,7 +4566,7 @@ function renderItem(item) {
         Desar al Receptari
       </button>
     </div>`;
-  cua.appendChild(div);
+  (tipus === 'enllac' ? document.getElementById('cuaEnllac') : cua).appendChild(div);
 }
 
 function setBadge(idx, classe, text) {
@@ -4857,7 +4917,81 @@ async function desarAGoogleSheets(recepta) {
   await fetch(`${SHEETS_URL}?${params.toString()}`, { mode: 'no-cors' });
 }
 
+// ══════════════════════════════════════════════
+// PROTECCIÓ CONTRA RECEPTES DUPLICADES
+// L'app identifica cada recepta pel seu nom: dos noms iguals
+// fan que targetes i edicions es confonguin entre elles.
+// ══════════════════════════════════════════════
+
+// Normalitza un nom per comparar: minúscules, sense accents ni espais sobrers
+function nomNormalitzat(nom) {
+  return (nom || '')
+    .toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+// Hi ha ja una recepta amb aquest nom? (excloure: nom original en edicions)
+function existeixRecepta(nom, excloure) {
+  const n = nomNormalitzat(nom);
+  if (!n) return false;
+  const exc = excloure !== undefined ? nomNormalitzat(excloure) : null;
+  return receptes.some(r => {
+    const rn = nomNormalitzat(r['Nom de la recepta']);
+    return rn === n && rn !== exc;
+  });
+}
+
+// Proposa un nom lliure afegint un distintiu: "Flam" → "Flam (2)", "Flam (3)"…
+function nomAmbDistintiu(nom) {
+  const base = nom.replace(/\s*\(\d+\)\s*$/, '').trim() || nom.trim();
+  let i = 2;
+  let candidat = `${base} (${i})`;
+  while (existeixRecepta(candidat)) { i++; candidat = `${base} (${i})`; }
+  return candidat;
+}
+
+// Diàleg de duplicat. Retorna una promesa amb la decisió de l'usuària:
+// 'distintiu' (desar amb sufix), 'canviar' (tornar al camp del nom) o 'cancelar'
+function mostrarDialegDuplicat(nom) {
+  return new Promise(resolve => {
+    document.getElementById('dialegDuplicat')?.remove(); // per si en quedava un
+    const suggerit = nomAmbDistintiu(nom);
+    const overlay = document.createElement('div');
+    overlay.className = 'novetats-overlay visible';
+    overlay.id = 'dialegDuplicat';
+    overlay.innerHTML = `
+      <div class="novetats-modal">
+        <div class="novetats-badge">RECEPTA DUPLICADA</div>
+        <h2 class="novetats-titol">Ja tens una recepta amb aquest nom</h2>
+        <p class="novetats-versio" style="margin-bottom:16px">«${escHTML(nom)}» ja és al teu receptari. Què vols fer?</p>
+        <div style="display:flex;flex-direction:column;gap:9px">
+          <button class="dup-btn dup-btn-primari" data-accio="distintiu">Desar-la com a «${escHTML(suggerit)}»</button>
+          <button class="dup-btn" data-accio="canviar">Canviar-li jo el nom</button>
+          <button class="dup-btn dup-btn-cancel" data-accio="cancelar">Cancel·lar</button>
+        </div>
+      </div>`;
+    overlay.addEventListener('click', e => {
+      const accio = e.target?.dataset?.accio;
+      if (accio) { overlay.remove(); resolve(accio); }
+      else if (e.target === overlay) { overlay.remove(); resolve('cancelar'); }
+    });
+    document.body.appendChild(overlay);
+  });
+}
+
 async function desarRecepta(idx) {
+  // Comprovació de duplicats abans de començar
+  const nomCamp = document.getElementById(`nom-${idx}`);
+  const nomIntent = nomCamp.value.trim();
+  if (nomIntent && existeixRecepta(nomIntent)) {
+    const decisio = await mostrarDialegDuplicat(nomIntent);
+    if (decisio === 'cancelar') return;
+    if (decisio === 'canviar') { nomCamp.focus(); nomCamp.select?.(); return; }
+    nomCamp.value = nomAmbDistintiu(nomIntent); // 'distintiu' → seguim amb el nom nou
+  }
+
   const btn = document.getElementById(`btn-desar-${idx}`);
   btn.disabled = true; btn.textContent = 'Desant…';
 
@@ -4878,6 +5012,7 @@ async function desarRecepta(idx) {
     etiquetes:    normalitzarEtiquetes(document.getElementById(`etiquetes-${idx}`)?.value || ''),
     instruccions: document.getElementById(`instruccions-${idx}`)?.value.trim() || '',
     racions:      racionsScan,
+    url:          items[idx]?.recepta?.url || items[idx]?.url || '',
   };
   items[idx].recepta = recepta;
 
@@ -4969,6 +5104,201 @@ function toggleFormDocs() {
   btn.style.borderRadius = obert ? '14px 14px 0 0' : '14px';
 }
 
+function toggleFormEnllac() {
+  const wrap  = document.getElementById('formEnllacWrap');
+  const btn   = document.getElementById('btnEnllacToggle');
+  const arrow = document.getElementById('enllac-arrow');
+  const obert = wrap.classList.toggle('obert');
+  arrow.style.transform = obert ? 'rotate(180deg)' : '';
+  btn.style.borderRadius = obert ? '14px 14px 0 0' : '14px';
+  if (obert) {
+    setTimeout(() => btn.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+    document.getElementById('urlImport').focus();
+  }
+}
+
+// ══════════════════════════════════════════════
+// IMPORTAR DES D'UN ENLLAÇ (web de receptes o YouTube)
+// La descàrrega la fa l'Apps Script (accio=importarUrl):
+// des del servidor de Google no hi ha restriccions CORS.
+// ══════════════════════════════════════════════
+// ══════════════════════════════════════════════
+// REBRE ENLLAÇOS COMPARTITS (Web Share Target)
+// Quan l'app està instal·lada al mòbil i l'usuària fa "Compartir"
+// des del navegador o de YouTube, el sistema obre l'app amb
+// l'enllaç als paràmetres de la URL (definits al manifest.json).
+// ══════════════════════════════════════════════
+let urlCompartidaPendent = null;
+
+function gestionarCompartit() {
+  const params = new URLSearchParams(location.search);
+  if (!params.has('compartit_url') && !params.has('compartit_text') && !params.has('compartit_titol')) return;
+  // L'enllaç pot venir a 'url', dins de 'text' (YouTube ho fa així) o a 'titol'
+  const cru = [params.get('compartit_url'), params.get('compartit_text'), params.get('compartit_titol')]
+    .filter(Boolean).join(' ');
+  const m = cru.match(/https?:\/\/\S+/);
+  // Netegem els paràmetres perquè recarregar la pàgina no repeteixi la importació
+  history.replaceState(null, '', location.pathname);
+  if (!m) return;
+  urlCompartidaPendent = m[0];
+  // Si la porta amb contrasenya està oberta, esperem: comprovarPassword() reprendrà el procés
+  if (localStorage.getItem('receptes_auth') === '1') {
+    setTimeout(processarUrlCompartida, 500); // marge perquè acabi la inicialització
+  }
+}
+document.addEventListener('DOMContentLoaded', gestionarCompartit);
+
+function processarUrlCompartida() {
+  if (!urlCompartidaPendent) return;
+  const url = urlCompartidaPendent;
+  urlCompartidaPendent = null;
+  mostrarPanell('scan');
+  const wrap = document.getElementById('formEnllacWrap');
+  if (!wrap.classList.contains('obert')) toggleFormEnllac();
+  const camp = document.getElementById('urlImport');
+  camp.value = url;
+  // Si encara no hi ha usuària triada, importarEnllac avisarà i deixarà
+  // l'enllaç escrit al camp, a punt per reintentar-ho
+  setTimeout(() => importarEnllac(), 400);
+}
+
+async function importarEnllac() {
+  const input = document.getElementById('urlImport');
+  let url = input.value.trim();
+  if (!url) { input.focus(); return; }
+  if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+
+  let hostname = '';
+  try { hostname = new URL(url).hostname.replace(/^www\./i, ''); }
+  catch { mostrarToast('❌ L\'enllaç no sembla vàlid'); return; }
+
+  if (!SHEETS_URL) { mostrarToast('❌ Cal tenir la usuària configurada per importar enllaços'); return; }
+
+  const esYoutube = /(^|\.)youtube\.com$|(^|\.)youtu\.be$/i.test(hostname);
+  const idx = items.length;
+  const item = {
+    file: { name: url },
+    tipus: 'enllac',
+    etiqueta: esYoutube ? '▶️ YouTube' : '🌐 Web',
+    status: 'processant',
+    recepta: null,
+    idx, url,
+  };
+  items.push(item);
+  renderItem(item);
+  input.value = '';
+
+  const btn = document.getElementById('btnImportarUrl');
+  btn.disabled = true; btn.textContent = 'Important…';
+  setBadge(idx, 'processant', 'Important…');
+  setEstat(idx, esYoutube ? 'Llegint la descripció del vídeo…' : 'Llegint la pàgina…');
+
+  try {
+    // POST amb text/plain: evita el preflight CORS i permet llegir la resposta
+    const resp = await fetch(`${SHEETS_URL}?accio=importarUrl`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ url }),
+      signal: AbortSignal.timeout(30000),
+    });
+    if (!resp.ok) throw new Error('Error de connexió amb l\'Apps Script');
+    let dades;
+    try { dades = await resp.json(); }
+    catch {
+      throw new Error('Resposta inesperada del servidor. Has actualitzat l\'Apps Script amb l\'acció "importarUrl"?');
+    }
+    if (!dades.ok) throw new Error(dades.error || 'No s\'ha pogut importar la recepta');
+    omplirDesDEnllac(item, dades, hostname);
+  } catch (e) {
+    item.status = 'error';
+    setBadge(idx, 'error', 'Error');
+    setEstat(idx, e.name === 'TimeoutError'
+      ? 'La pàgina ha trigat massa a respondre'
+      : (e.message || 'No s\'ha pogut importar'));
+    console.error(e);
+  } finally {
+    btn.disabled = false; btn.textContent = 'Importar recepta';
+    actualitzarBotons();
+  }
+}
+
+// Treu el soroll habitual de les descripcions de YouTube:
+// crides a subscriure's, xarxes socials, enllaços, marques de temps…
+function netejarDescripcioYoutube(text) {
+  const reSoroll = /subscriu|subscribe|suscr[ií]bete|segueix-?me|s[íi]gueme|follow me|instagram|facebook|tiktok|twitter|\bpatreon\b|\btelegram\b|whatsapp|codi de descompte|c[óo]digo de descuento|discount code|el meu llibre|mi libro|my book/i;
+  const reCapIngYt   = /^(ingredients?|ingredientes)\s*:?\s*$/i;
+  const reCapInstrYt = /^(preparaci[óo]n?|elaboraci[óo]n?|instruccions?|instrucciones|instructions?|m[èe]tode|m[ée]todo|method|passos?|pasos?|steps?|directions?)\s*:?\s*$/i;
+  return text
+    .split('\n')
+    .filter(l => {
+      const t = l.trim();
+      if (reSoroll.test(t)) return false;
+      if (/^https?:\/\/\S+$/i.test(t)) return false;           // línia que és només un enllaç
+      if (/^\d{1,2}:\d{2}(:\d{2})?\s/.test(t)) return false;   // marques de temps (0:00 Intro…)
+      if (/^[#@]\S+(\s+[#@]\S+)*$/.test(t)) return false;      // línia de hashtags o mencions
+      return true;
+    })
+    .map(l => {
+      l = l.replace(/https?:\/\/\S+/gi, '').trim();            // enllaços enmig del text
+      // Capçaleres en majúscules ("INGREDIENTS") es confondrien amb el títol:
+      // les normalitzem perquè extraccioLocal les reconegui com a capçaleres
+      if (reCapIngYt.test(l))   return 'Ingredients:';
+      if (reCapInstrYt.test(l)) return 'Preparació:';
+      return l;
+    })
+    .join('\n');
+}
+
+// Omple el formulari de revisió amb el que ha retornat l'Apps Script.
+// - tipus 'jsonld': la web tenia la recepta estructurada (schema.org) → dades exactes
+// - tipus 'youtube' o 'text': text lliure → mateixa extracció heurística que PDFs i Word
+function omplirDesDEnllac(item, dades, hostname) {
+  const { idx, url } = item;
+  let recepta;
+  if (dades.tipus === 'jsonld') {
+    recepta = {
+      nom:          normalitzarTitol(dades.nom || ''),
+      ingredients:  dades.ingredients  || '',
+      instruccions: dades.instruccions || '',
+      racions:      dades.racions      || '',
+      font:         dades.font || hostname,
+    };
+  } else {
+    let textNet = dades.text || '';
+    if (dades.tipus === 'youtube') textNet = netejarDescripcioYoutube(textNet);
+    const ext = extraccioLocal(textNet, dades.font || hostname);
+    recepta = {
+      nom:          normalitzarTitol(dades.nom || '') || ext.nom || '',
+      ingredients:  ext.ingredients  || '',
+      instruccions: ext.instruccions || '',
+      racions:      ext.racions || dades.racions || '',
+      font:         dades.font  || ext.font || hostname,
+    };
+  }
+  recepta.url = url;
+  item.recepta = recepta;
+
+  // A la targeta, substituïm la URL pel títol trobat (més llegible)
+  const nomEl = document.querySelector(`#targeta-${idx} .targeta-nom`);
+  if (nomEl && recepta.nom) nomEl.textContent = recepta.nom;
+
+  document.getElementById(`nom-${idx}`).value          = recepta.nom || '';
+  document.getElementById(`ing-${idx}`).value          = recepta.ingredients || '';
+  document.getElementById(`instruccions-${idx}`).value = recepta.instruccions || '';
+  document.getElementById(`font-${idx}`).value         = recepta.font || '';
+
+  const selCat = document.getElementById(`cat-${idx}`);
+  const catSug = detectarCategoriaScan((recepta.nom || '').toLowerCase(), '');
+  if (catSug) selCat.value = catSug;
+
+  item.status = 'fet';
+  setBadge(idx, 'fet', '✓ Importat');
+  setEstat(idx, recepta.ingredients
+    ? 'Revisa i desa al receptari'
+    : 'No s\'han detectat ingredients — revisa-ho manualment');
+  document.getElementById(`form-${idx}`).classList.add('visible');
+}
+
 function toggleFormManual() {
   const wrap  = document.getElementById('formManualWrap');
   const btn   = document.getElementById('btnManualToggle');
@@ -5019,6 +5349,14 @@ async function desarManual() {
   errEl.style.display = 'none';
   nomEl.style.borderColor = '';
   racionsEl.style.borderColor = '';
+
+  // Comprovació de duplicats abans de continuar
+  if (existeixRecepta(nom)) {
+    const decisio = await mostrarDialegDuplicat(nom);
+    if (decisio === 'cancelar') return;
+    if (decisio === 'canviar') { nomEl.focus(); nomEl.select(); return; }
+    nomEl.value = nomAmbDistintiu(nom); // 'distintiu' → el desat llegirà el nom nou
+  }
 
   const ingRaw = document.getElementById('manual-ing').value.trim();
   if (ingRaw) {
