@@ -7,6 +7,16 @@
   "background_color": "#0B2027",
   "theme_color": "#0B2027",
   "orientation": "portrait-primary",
+  "share_target": {
+    "action": "./index.html",
+    "method": "GET",
+    "params": {
+      "title": "compartit_titol",
+      "text": "compartit_text",
+      "url": "compartit_url"
+    }
+  }
+
   "icons": [
     {
       "src": "icon-192.png",
