@@ -659,35 +659,6 @@
     background: rgba(245,247,73,0.05);
   }
 
-  /* Mode local/fora */
-  .selector-mode {
-    display: flex; justify-content: center;
-    gap: 10px; margin-top: 1.25rem;
-  }
-  .btn-mode {
-    padding: 0.45rem 1.1rem;
-    font-family: 'Poppins', sans-serif;
-    font-size: 0.82rem; font-weight: 400;
-    border-radius: 8px; border: 1.5px solid var(--border);
-    background: transparent; color: var(--text-muted);
-    cursor: pointer; transition: all 0.2s;
-  }
-  .btn-mode:hover { border-color: var(--accent); color: var(--accent); }
-  .btn-mode.actiu {
-    background: var(--border); border-color: var(--border);
-    color: var(--text);
-  }
-
-  .missatge-fora {
-    display: none; margin: 1rem auto 0;
-    max-width: 480px; background: var(--error-bg);
-    border: 1.5px solid var(--error);
-    border-radius: 12px; padding: 0.75rem 1.1rem;
-    font-size: 0.85rem; color: #E8A0A0;
-    text-align: center; line-height: 1.5;
-  }
-  .missatge-fora.visible { display: block; }
-
   .comptador { font-size: 12px; color: var(--text-muted); margin-bottom: 1rem; }
 
   .error-box {
@@ -1170,7 +1141,13 @@
     padding: 0.75rem 1.4rem; border-radius: 10px;
     font-size: 0.88rem; font-weight: 400; opacity: 0;
     transition: all 0.35s cubic-bezier(.2,.8,.4,1);
-    pointer-events: none; z-index: 999; white-space: nowrap;
+    pointer-events: none; z-index: 999;
+    /* Responsive: els missatges llargs salten de línia en lloc de sortir de pantalla */
+    width: max-content;
+    max-width: calc(100vw - 2rem);
+    box-sizing: border-box;
+    text-align: center;
+    line-height: 1.45;
   }
   #toast.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
 
@@ -1290,6 +1267,14 @@
     margin-bottom: 8px;
   }
   .detall-ing-header .detall-seccio-label { margin-bottom: 0; }
+
+  /* ── Només mòbil: el botó "Mode cuinar" al final del detall,
+        després de les instruccions i els comentaris ── */
+  @media (max-width: 767px) {
+    .detall-dos-cols > .detall-col-ing,
+    .detall-dos-cols > .detall-col-instr { display: contents; }
+    .detall-dos-cols .detall-btn-cuinar { order: 10; margin-top: 1.25rem; }
+  }
 
   @media (min-width: 768px) {
     .detall-title-actions {
@@ -1885,8 +1870,6 @@ if (localStorage.getItem('receptes_auth') === '1') {
     <h1>Què vols cuinar avui?</h1>
     <p id="subtitol">Carregant...</p>
     <button class="btn-config-url" onclick="obrirConfigUrl()" title="Canviar la URL del receptari"><i class="ti ti-settings"></i></button>
-
-    <div class="missatge-fora" id="missatge-fora">🌍 Mode fora de casa — les receptes es carreguen des de Google Sheets. Un segon que estem connectant...</div>
   </header>
 
   <div class="container">
@@ -2162,7 +2145,7 @@ if (localStorage.getItem('receptes_auth') === '1') {
   </div>
 
   <div id="avis-servidor" style="margin-top:40px">
-    ⚠️ &nbsp;El servidor Python no està actiu (necessari per a les fotografies). Obre un terminal i executa: <strong>&nbsp;python servidor.py</strong>
+    ⚠️ &nbsp;Encara no hi ha cap receptari configurat. Tria la teva usuària o configura la URL (icona <strong>⚙️</strong>) per poder escanejar i desar receptes.
   </div>
 </div>
 
@@ -2180,8 +2163,7 @@ if (localStorage.getItem('receptes_auth') === '1') {
 // ══════════════════════════════════════════════
 
 // URLs — ajusta-les si canvien
-const API_LOCAL  = 'http://localhost:8765/api/receptes';
-const API_PYTHON = 'http://localhost:5000';
+const API_PYTHON = 'http://localhost:5000'; // servidor local d'OCR (opcional)
 
 // ── Mapa d'usuàries → URL d'Apps Script ──
 const USUARIES = {
@@ -2467,18 +2449,48 @@ function _troncs(mot) {
   return res;
 }
 
+// Treu els accents per comparar ("cigró" ↔ "cigro", "tomàquet" ↔ "tomaquet")
+function _senseAccents(s) {
+  return s.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
+/**
+ * Genera les formes singulars candidates d'una cerca en plural,
+ * per als tres idiomes: ametlles→ametlla, pomes→poma, cigrons→cigró(cigro),
+ * pastanagues→pastanaga, almonds→almond, tomatoes→tomato, almendras→almendra…
+ */
+function _variantsSingular(q) {
+  const v = new Set([q]);
+  if (q.endsWith('s'))    v.add(q.slice(0, -1));          // cigrons→cigron, almonds→almond
+  if (q.endsWith('es')) {
+    v.add(q.slice(0, -2));                                // tomatoes→tomato
+    v.add(q.slice(0, -2) + 'a');                          // ametlles→ametlla, pomes→poma
+  }
+  if (q.endsWith('ns'))   v.add(q.slice(0, -2));          // cigrons→cigro(ó), melons→melo(ó)
+  if (q.endsWith('ques')) v.add(q.slice(0, -4) + 'ca');   // -ques→-ca
+  if (q.endsWith('gues')) v.add(q.slice(0, -4) + 'ga');   // pastanagues→pastanaga
+  return [...v];
+}
+
 /**
  * Donada una query, retorna un array de termes addicionals a buscar (ca+es+en).
- * Fa matching parcial i genera troncs per capturar plurals.
+ * Fa matching parcial (prefixos), tolera plurals en els tres idiomes
+ * i ignora els accents a l'hora de trobar el grup de sinònims.
  */
 function expandirCerca(q) {
   if (!q || q.length < 2) return [];
+  const qNorm = _senseAccents(q.toLowerCase());
+  const variants = _variantsSingular(qNorm);
   const extra = new Set();
   for (const [key, sinSet] of _ingIndex) {
-    if (key.includes(q)) {
+    const keyNorm = _senseAccents(key);
+    const coincideix =
+      keyNorm.includes(qNorm) ||                          // escriptura parcial: "amet" → ametlla
+      variants.some(f => f.length >= 4 ? keyNorm.startsWith(f) : keyNorm === f); // plurals
+    if (coincideix) {
       for (const s of sinSet) {
         extra.add(s);
-        // Afegim troncs per capturar variacions de plural
+        // Afegim troncs per capturar variacions de plural al text de les receptes
         for (const tr of _troncs(s)) extra.add(tr);
       }
     }
@@ -2666,7 +2678,7 @@ function formatQuantity(num) {
 }
 
 function escHTML(s) {
-  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 
 function renderScaledIngredient(ing, factor) {
@@ -2699,9 +2711,9 @@ function buildIngPreviewHTML(parsed, onCancel, onConfirm) {
     const noEscala = ing.q === null;
     return `<div class="ing-preview-row">
       <div class="ing-preview-cell ing-preview-cell-q">${qVal !== '' ? qVal : '—'}</div>
-      <div class="ing-preview-cell ing-preview-cell-u${!uVal ? ' buit' : ''}" style="${uVal ? 'color:var(--accent);border-color:rgba(245,247,73,0.25)' : 'color:var(--text-muted)'}">${uVal || '—'}</div>
+      <div class="ing-preview-cell ing-preview-cell-u${!uVal ? ' buit' : ''}" style="${uVal ? 'color:var(--accent);border-color:rgba(245,247,73,0.25)' : 'color:var(--text-muted)'}">${escHTML(uVal) || '—'}</div>
       <div class="ing-preview-cell ing-preview-cell-n" style="display:flex;align-items:center;gap:6px;">
-        <span>${nVal}</span>
+        <span>${escHTML(nVal)}</span>
         ${noEscala ? '<span class="ing-preview-badge">no escala</span>' : ''}
       </div>
     </div>`;
@@ -2808,7 +2820,7 @@ function actualitzarReceptaDia() {
 
   nomEl.textContent = receptaDiaNom;
   metaEl.innerHTML =
-    cat + (cat && val ? ' · ' : '') + (val ? `<span class="stars">${stars}</span>` : '');
+    escHTML(cat) + (cat && val ? ' · ' : '') + (val ? `<span class="stars">${stars}</span>` : '');
 
   if (loading) loading.style.display = 'none';
   nomEl.style.display = '';
@@ -2854,12 +2866,10 @@ function obrirDetall(nom, desDePopstate) {
   const nomId      = nom.replace(/[^a-zA-Z0-9]/g, '_');
   const nomEsc     = nom.replace(/'/g, "\\'").replace(/"/g, '&quot;');
 
-  const starsHTML = [1,2,3,4,5].map(i =>
-    `<span class="card-star${i <= valoracio ? '' : ' off'}">★</span>`
-  ).join('');
+  const starsHTML = starsInteractiusHTML(nom, valoracio);
 
   const heroHTML = foto
-    ? `<img class="detall-hero" src="${foto}" alt="${nom.replace(/"/g,'&quot;')}">`
+    ? `<img class="detall-hero" src="${escHTML(foto)}" alt="${escHTML(nom)}">`
     : `<div class="detall-hero-placeholder"><i class="ti ti-tools-kitchen-2" aria-hidden="true"></i></div>`;
 
   const ingParsed = getIngredientsParsed(r);
@@ -2937,7 +2947,7 @@ function obrirDetall(nom, desDePopstate) {
          <div class="ck-list${ckEstat.actiu ? ' cuinant' : ''}" id="det-ck-instr-list-${nomId}">
            ${passos.map((pas, idx) => {
              const fet = ckEstat.marcatsInstr.has(idx) ? ' fet' : '';
-             const safe = pas.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+             const safe = escHTML(pas);
              return `<div class="ck-ing${fet}" id="det-ck-pas-${nomId}-${idx}" onclick="togglePas('${nomId}','${nomEsc}',${idx})">
                <span class="ck-circle">${ckSvg}</span>
                <span class="ck-txt">${safe}</span>
@@ -2950,20 +2960,20 @@ function obrirDetall(nom, desDePopstate) {
   const comHTML = comentaris
     ? `<div class="detall-seccio">
          <div class="detall-seccio-label">Comentaris</div>
-         <p class="detall-comentari">${comentaris.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</p>
+         <p class="detall-comentari">${escHTML(comentaris)}</p>
        </div>`
     : '';
 
   const etHTML = etiquetes
     ? `<div class="detall-seccio">
-         ${etiquetes.split(',').map(e => `<span class="filtre-etiqueta">${netejarEtiqueta(e)}</span>`).join(' ')}
+         ${etiquetes.split(',').map(e => `<span class="filtre-etiqueta">${escHTML(netejarEtiqueta(e))}</span>`).join(' ')}
        </div>`
     : '';
 
   const fontHTML = font
     ? `<div class="detall-font">
          <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-         ${font}${url ? ` · <a href="${url}" target="_blank" rel="noopener noreferrer" style="color:var(--accent);text-decoration:none;">ves-hi</a>` : ''}
+         ${escHTML(font)}${url ? ` · <a href="${escHTML(url)}" target="_blank" rel="noopener noreferrer" style="color:var(--accent);text-decoration:none;">ves-hi</a>` : ''}
        </div>`
     : '';
 
@@ -2984,10 +2994,10 @@ function obrirDetall(nom, desDePopstate) {
     <div class="detall-contingut">
       <div class="detall-title-row">
         <div class="detall-title-left">
-          <div class="detall-nom">${nom}</div>
+          <div class="detall-nom">${escHTML(nom)}</div>
           <div class="detall-meta">
-            <span class="badge-cat" style="${badgeStyle(cat)}">${cat}</span>
-            <div class="card-stars">${starsHTML}</div>
+            <span class="badge-cat" style="${badgeStyle(cat)}">${escHTML(cat)}</span>
+            <div class="card-stars" id="detall-stars" data-nom="${escHTML(nom)}" aria-label="Valoració: ${valoracio} de 5">${starsHTML}</div>
             ${fontHTML}
             ${etHTML}
             <button class="btn-cuinar-detall-meta js-ck-toggle${ckEstat.actiu ? ' actiu' : ''}" onclick="toggleCookMode('${nomId}','${nomEsc}')" title="Mode cuinar" aria-label="Mode cuinar">
@@ -3062,7 +3072,6 @@ function mostrarToast(msg) {
 // CERCADOR — lògica
 // ══════════════════════════════════════════════
 
-let mode = 'fora';
 let receptes = [];
 // Previsualització optimista de fotos acabades de pujar (clau: nom de recepta → dataURL)
 // Es buida en recarregar, quan ja arriba l'URL definitiu de Drive des del full.
@@ -3076,19 +3085,40 @@ let wakeLock = null;
 const cuinantActius = new Set(); // noms de receptes amb mode cuinar actiu
 let carregant = false; // guard per evitar crides simultànies
 
-function canviarMode(nouMode) {
-  mode = nouMode;
-  document.getElementById('btn-local').classList.toggle('actiu', mode === 'local');
-  document.getElementById('btn-fora').classList.toggle('actiu', mode === 'fora');
-  document.getElementById('missatge-fora').classList.toggle('visible', mode === 'fora');
-  receptes = []; oberts.clear(); catActiva = 'totes';
-  document.getElementById('cerca').value = '';
-  document.getElementById('filtres').innerHTML = '';
-  document.getElementById('comptador').textContent = '';
-  document.getElementById('llista').innerHTML = '';
-  document.getElementById('subtitol').textContent = 'Carregant...';
-  carregar();
+// ── Persistència del mode cuinar: sobreviu a recàrregues de la pàgina ──
+// (clau per usuària, com la cache de receptes)
+const COOK_KEY = () => 'cookstate_' + (usuariaActiva || 'anonima');
+
+function desarCookState() {
+  try {
+    const pla = {};
+    for (const nom in cookState) {
+      const e = cookState[nom];
+      if (!e.actiu) continue; // només guardem receptes amb el mode cuinar actiu
+      pla[nom] = { marcats: [...e.marcats], marcatsInstr: [...(e.marcatsInstr || new Set())] };
+    }
+    if (Object.keys(pla).length) localStorage.setItem(COOK_KEY(), JSON.stringify(pla));
+    else localStorage.removeItem(COOK_KEY());
+  } catch (e) { /* localStorage ple o no disponible: no passa res */ }
 }
+
+function restaurarCookState() {
+  try {
+    const raw = localStorage.getItem(COOK_KEY());
+    if (!raw) return;
+    const pla = JSON.parse(raw);
+    for (const nom in pla) {
+      cookState[nom] = {
+        actiu: true,
+        marcats: new Set(pla[nom].marcats || []),
+        marcatsInstr: new Set(pla[nom].marcatsInstr || []),
+      };
+      cuinantActius.add(nom);
+    }
+    if (cuinantActius.size) gestionarWakeLock();
+  } catch (e) { /* dades corruptes: les ignorem */ }
+}
+restaurarCookState();
 
 const CAT_COLORS = {
   'Barretes':             { bg:'#52050A', color:'#F6F5AE' },
@@ -3199,26 +3229,19 @@ function carregarDesDeCache() {
 
 async function carregar() {
   if (carregant) return; // evita crides simultànies que penjarien el navegador
-  // Si no hi ha URL configurada i estem en mode fora, no intentem carregar
-  if (mode !== 'local' && !SHEETS_URL) {
+  // Si no hi ha URL configurada, no intentem carregar
+  if (!SHEETS_URL) {
     document.getElementById('subtitol').textContent = 'Configura la URL del teu receptari per començar';
     return;
   }
   carregant = true;
   try {
-    let data;
     const timeout = AbortSignal.timeout(8000); // màxim 8s; si el servidor no respon, llança error
-    if (mode === 'local') {
-      const r = await fetch(API_LOCAL, { signal: timeout });
-      if (!r.ok) throw new Error('Error servidor');
-      data = await r.json();
-    } else {
-      // Llegim via Apps Script (evita el bloqueig CORS de la URL CSV directa)
-      const r = await fetch(`${SHEETS_URL}`, { signal: timeout });
-      if (!r.ok) throw new Error('Error Sheets: ' + r.status);
-      data = await r.json();
-    }
-    // El Sheets retorna { receptes, categoriesExtra }; mode local retorna array directe
+    // Llegim via Apps Script (evita el bloqueig CORS de la URL CSV directa)
+    const r = await fetch(`${SHEETS_URL}`, { signal: timeout });
+    if (!r.ok) throw new Error('Error Sheets: ' + r.status);
+    const data = await r.json();
+    // El Sheets retorna { receptes, categoriesExtra }
     if (Array.isArray(data)) {
       receptes = data;
     } else {
@@ -3229,7 +3252,6 @@ async function carregar() {
       });
     }
     document.getElementById('errorBox').style.display = 'none';
-    document.getElementById('missatge-fora').classList.remove('visible');
     // Un cop recarregat, l'URL definitiu de Drive ja és al full: descartem previsualitzacions locals
     for (const k in fotosLocals) delete fotosLocals[k];
     document.getElementById('subtitol').textContent =
@@ -3237,20 +3259,23 @@ async function carregar() {
     construirFiltres();
     aplicar();
     actualitzarReceptaDia();
+    // Neteja estats de cuinar de receptes que ja no existeixen (esborrades o reanomenades)
+    const nomsActuals = new Set(receptes.map(r => r['Nom de la recepta']));
+    let netejat = false;
+    for (const nom in cookState) {
+      if (!nomsActuals.has(nom)) { delete cookState[nom]; cuinantActius.delete(nom); netejat = true; }
+    }
+    if (netejat) { gestionarWakeLock(); desarCookState(); }
     desarCacheReceptes(); // còpia local per obrir a l'instant la propera vegada
   } catch (e) {
     // Si ja mostrem receptes de la cache, no espantem l'usuària amb l'error gros
-    if (cacheMostrada && mode !== 'local') {
+    if (cacheMostrada) {
       mostrarToast('⚠️ No s\'ha pogut actualitzar — mostrant la darrera còpia desada');
       return;
     }
     const errorBox = document.getElementById('errorBox');
     errorBox.style.display = 'block';
-    if (mode === 'local') {
-      errorBox.innerHTML = '<strong>No es pot connectar al servidor local</strong>Assegura\'t que el servidor està en marxa: <code>python servidor.py</code> — o canvia a mode <em>Estic fora de casa</em> per carregar des de Google Sheets.';
-    } else {
-      errorBox.innerHTML = '<strong>No s\'han pogut carregar les receptes</strong>Comprova que tens connexió a internet i que el Google Sheet és accessible.';
-    }
+    errorBox.innerHTML = '<strong>No s\'han pogut carregar les receptes</strong>Comprova que tens connexió a internet i que el Google Sheet és accessible.';
     document.getElementById('subtitol').textContent = 'Error de connexió';
   } finally {
     carregant = false; // allibera el guard sempre
@@ -3279,9 +3304,9 @@ function construirFiltres() {
       autoAttr = ` data-cat-auto="${idx}"`;
     }
     return `<button class="filtre${actiu ? ' actiu' : ''}"
-              data-cat="${cat}"${autoAttr}
-              onclick="filtrar('${cat.replace(/'/g,"\\'")}')">
-              ${label}
+              data-cat="${escHTML(cat)}"${autoAttr}
+              onclick="filtrar('${cat.replace(/'/g,"\\'").replace(/"/g,'&quot;')}')">
+              ${escHTML(label)}
             </button>`;
   }).join('');
   construirFiltresEtiquetes();
@@ -3297,8 +3322,8 @@ function construirFiltresEtiquetes() {
   cont.innerHTML = uniques.map(et => {
     const actiu = etiquetaActiva.has(et);
     return `<button class="filtre-etiqueta${actiu ? ' actiu' : ''}"
-              onclick="filtrarEtiqueta('${et.replace(/'/g,"\\'")}')">
-              ${et}
+              onclick="filtrarEtiqueta('${et.replace(/'/g,"\\'").replace(/"/g,'&quot;')}')">
+              ${escHTML(et)}
             </button>`;
   }).join('');
 }
@@ -3409,6 +3434,7 @@ function toggleCookMode(nomId, nom) {
   if (estat.actiu) cuinantActius.add(nom);
   else cuinantActius.delete(nom);
   gestionarWakeLock();
+  desarCookState();
 }
 
 function toggleIngredient(nomId, nom, idx) {
@@ -3422,6 +3448,7 @@ function toggleIngredient(nomId, nom, idx) {
   const detRow = document.getElementById('det-ck-ing-' + nomId + '-' + idx);
   if (detRow) detRow.classList.toggle('fet', estat.marcats.has(idx));
   actualitzarProgresCook(nomId, nom);
+  desarCookState();
 }
 
 function togglePas(nomId, nom, idx) {
@@ -3436,6 +3463,7 @@ function togglePas(nomId, nom, idx) {
   const detRow = document.getElementById('det-ck-pas-' + nomId + '-' + idx);
   if (detRow) detRow.classList.toggle('fet', estat.marcatsInstr.has(idx));
   actualitzarProgresCook(nomId, nom);
+  desarCookState();
 }
 
 function reiniciarCook(nomId, nom) {
@@ -3448,6 +3476,7 @@ function reiniciarCook(nomId, nom) {
   const llistaDet = document.getElementById('det-ck-list-' + nomId);
   if (llistaDet) llistaDet.querySelectorAll('.ck-ing.fet').forEach(el => el.classList.remove('fet'));
   actualitzarProgresCook(nomId, nom);
+  desarCookState();
 }
 
 function reiniciarPassos(nomId, nom) {
@@ -3459,6 +3488,7 @@ function reiniciarPassos(nomId, nom) {
   const llistaDet = document.getElementById('det-ck-instr-list-' + nomId);
   if (llistaDet) llistaDet.querySelectorAll('.ck-ing.fet').forEach(el => el.classList.remove('fet'));
   actualitzarProgresCook(nomId, nom);
+  desarCookState();
 }
 
 function actualitzarProgresCook(nomId, nom) {
@@ -3719,11 +3749,9 @@ function aplicar() {
     const nomId      = nom.replace(/[^a-zA-Z0-9]/g, '_');
     const catSelect  = ['', ...CAT_OPCIONS, '__nova__'].map(c => {
       if (c === '__nova__') return `<option value="__nova__">+ Nova categoria…</option>`;
-      return `<option value="${c}"${c === cat ? ' selected' : ''}>${c || '— Sense categoria —'}</option>`;
+      return `<option value="${escHTML(c)}"${c === cat ? ' selected' : ''}>${escHTML(c) || '— Sense categoria —'}</option>`;
     }).join('');
-    const starsHTML  = [1,2,3,4,5].map(i =>
-      `<span class="card-star${i <= valoracio ? '' : ' off'}" onclick="event.stopPropagation();valorar('${nom.replace(/'/g,"\\'").replace(/"/g,"&quot;")}',${i})" style="cursor:pointer">★</span>`
-    ).join('');
+    const starsHTML  = starsInteractiusHTML(nom, valoracio);
     const instrHTML  = instruccions
       ? (() => {
           const passos = instruccions.split('\n').filter(Boolean);
@@ -3745,7 +3773,7 @@ function aplicar() {
             <div class="ck-list${estatI.actiu ? ' cuinant' : ''}" id="ck-instr-list-${nomId}">
               ${passos.map((pas, idx) => {
                 const fet = estatI.marcatsInstr.has(idx) ? ' fet' : '';
-                const safe = pas.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+                const safe = escHTML(pas);
                 return `<div class="ck-ing${fet}" id="ck-pas-${nomId}-${idx}" onclick="event.stopPropagation(); togglePas('${nomId}','${nom.replace(/'/g,"\\'").replace(/"/g,"&quot;")}',${idx})">
                   <span class="ck-circle">${ckSvgI}</span>
                   <span class="ck-txt">${safe}</span>
@@ -3759,25 +3787,25 @@ function aplicar() {
       ? `<div class="card-section">
            <div class="card-section-label">Etiquetes</div>
            <div class="card-etiquetes">
-             ${etiquetes.split(',').map(e => `<span class="filtre-etiqueta">${netejarEtiqueta(e)}</span>`).join('')}
+             ${etiquetes.split(',').map(e => `<span class="filtre-etiqueta">${escHTML(netejarEtiqueta(e))}</span>`).join('')}
            </div>
          </div>`
       : '';
     const comHTML = comentaris
       ? `<div class="card-section">
            <div class="card-section-label">Comentaris</div>
-           <p style="font-size:13px;color:var(--text-dim);line-height:1.65;margin:0;white-space:pre-line">${comentaris.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</p>
+           <p style="font-size:13px;color:var(--text-dim);line-height:1.65;margin:0;white-space:pre-line">${escHTML(comentaris)}</p>
          </div>`
       : '';
     return `<div class="card" id="card-${nomId}" ${vistaTipus === 'grid' ? `onclick="obrirDetall('${nom.replace(/'/g,"\\'").replace(/"/g,'&quot;')}')"` : ''}>
       <div class="card-img-wrap">
-        <img class="card-img" src="${fotoSrc}" alt="${nom.replace(/"/g,'&quot;')}" loading="lazy">
+        <img class="card-img" src="${escHTML(fotoSrc)}" alt="${escHTML(nom)}" loading="lazy">
       </div>
       <div class="card-header" ${vistaTipus === 'grid' ? '' : `onclick="toggle('${nom.replace(/'/g,"\\'").replace(/"/g,"&quot;")}')"`} >
-        ${foto ? `<img class="card-thumb" src="${foto}" alt="" loading="lazy">` : ''}
-        <span class="card-nom">${nom}</span>
+        ${foto ? `<img class="card-thumb" src="${escHTML(foto)}" alt="" loading="lazy">` : ''}
+        <span class="card-nom">${escHTML(nom)}</span>
         <div class="card-dreta">
-          <span class="badge-cat" style="${badgeStyle(cat)}">${cat}</span>
+          <span class="badge-cat" style="${badgeStyle(cat)}">${escHTML(cat)}</span>
           <svg class="card-arrow ${obert ? 'obert' : ''}" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
             <path d="m6 9 6 6 6-6"/>
           </svg>
@@ -3803,7 +3831,7 @@ function aplicar() {
                 </button>
               </div>
             </div>
-            ${foto ? `<img class="card-foto-float" src="${foto}" alt="" loading="lazy">` : ''}
+            ${foto ? `<img class="card-foto-float" src="${escHTML(foto)}" alt="" loading="lazy">` : ''}
             ${(() => {
               const ingParsedCard = getIngredientsParsed(r);
               const ingArr = ingParsedCard.map(i => renderScaledIngredient(i, 1));
@@ -3835,7 +3863,7 @@ function aplicar() {
             ${etHTML}
             ${font ? `<p class="card-font" id="vista-font-${nomId}">
               <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-              ${font}${url ? ` · <a href="${url}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" style="color:var(--accent);text-decoration:none;font-size:12px;">ves-hi</a>` : ''}
+              ${escHTML(font)}${url ? ` · <a href="${escHTML(url)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" style="color:var(--accent);text-decoration:none;font-size:12px;">ves-hi</a>` : ''}
             </p>` : ''}
             <div class="card-accions-inferiors" onclick="event.stopPropagation()">
               <button class="card-accio-btn" onclick="obrirDetall('${nom.replace(/'/g,"\\'").replace(/"/g,'&quot;')}')">Obrir</button>
@@ -3846,7 +3874,7 @@ function aplicar() {
               <div class="card-edit-row">
                 <div class="card-edit-group">
                   <span class="card-edit-label">Nom</span>
-                  <input type="text" id="edit-nom-${nomId}" value="${nom.replace(/"/g,'&quot;')}">
+                  <input type="text" id="edit-nom-${nomId}" value="${escHTML(nom)}">
                 </div>
                 <div class="card-edit-group">
                   <span class="card-edit-label">Categoria</span>
@@ -3860,7 +3888,7 @@ function aplicar() {
                 <span class="card-edit-label">Foto de la recepta</span>
                 <div class="foto-edit">
                   <div class="foto-preview" id="foto-preview-${nomId}">
-                    ${foto ? `<img src="${foto}" alt="Foto de ${nom.replace(/"/g,'&quot;')}">` : `<span class="foto-preview-buida">Encara no hi ha foto</span>`}
+                    ${foto ? `<img src="${escHTML(foto)}" alt="Foto de ${escHTML(nom)}">` : `<span class="foto-preview-buida">Encara no hi ha foto</span>`}
                   </div>
                   <div class="foto-edit-accions">
                     <div class="btn-foto" onclick="this.querySelector('input').click()">
@@ -3877,11 +3905,11 @@ function aplicar() {
               </div>
               <div class="card-edit-group full">
                 <span class="card-edit-label">Ingredients</span>
-                <textarea id="edit-ing-${nomId}" style="min-height:150px">${(() => {
+                <textarea id="edit-ing-${nomId}" style="min-height:150px">${escHTML((() => {
                   const parsed = getIngredientsParsed(r);
                   if (parsed.length) return parsed.map(i => renderScaledIngredientPlain(i, 1)).join('\n');
                   return ing.split(' · ').join('\n');
-                })()}</textarea>
+                })())}</textarea>
               </div>
               <div class="card-edit-row">
                 <div class="card-edit-group">
@@ -3890,24 +3918,24 @@ function aplicar() {
                 </div>
                 <div class="card-edit-group">
                   <span class="card-edit-label">Font</span>
-                  <input type="text" id="edit-font-${nomId}" value="${font.replace(/"/g,'&quot;')}">
+                  <input type="text" id="edit-font-${nomId}" value="${escHTML(font)}">
                 </div>
               </div>
               <div class="card-edit-group full">
                 <span class="card-edit-label">URL</span>
-                <input type="text" id="edit-url-${nomId}" value="${url.replace(/"/g,'&quot;')}" placeholder="https://...">
+                <input type="text" id="edit-url-${nomId}" value="${escHTML(url)}" placeholder="https://...">
               </div>
               <div class="card-edit-group full">
                 <span class="card-edit-label">Instruccions</span>
-                <textarea id="edit-instruccions-${nomId}" style="min-height:150px">${instruccions.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</textarea>
+                <textarea id="edit-instruccions-${nomId}" style="min-height:150px">${escHTML(instruccions)}</textarea>
               </div>
               <div class="card-edit-group full">
                 <span class="card-edit-label">Comentaris</span>
-                <textarea id="edit-comentaris-${nomId}" placeholder="Notes, trucs, variacions…">${comentaris.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</textarea>
+                <textarea id="edit-comentaris-${nomId}" placeholder="Notes, trucs, variacions…">${escHTML(comentaris)}</textarea>
               </div>
               <div class="card-edit-group full">
                 <span class="card-edit-label">Etiquetes</span>
-                <input type="text" id="edit-etiquetes-${nomId}" value="${etiquetes.replace(/"/g,'&quot;')}" placeholder="sopar ràpid, meal prep…">
+                <input type="text" id="edit-etiquetes-${nomId}" value="${escHTML(etiquetes)}" placeholder="sopar ràpid, meal prep…">
               </div>
               <div class="card-edit-accions">
                 <button class="btn-edit-cancel" onclick="tancarEdicio('${nomId}')">Cancel·lar</button>
@@ -4155,6 +4183,14 @@ async function confirmarDesarEdicio(nomId, nomOriginal, ingJSON) {
   }
 }
 
+// Genera les 5 estrelles clicables per a una recepta (usat a les cards i al detall)
+function starsInteractiusHTML(nom, valoracio) {
+  const nomJs = nom.replace(/'/g, "\\'").replace(/"/g, "&quot;");
+  return [1,2,3,4,5].map(i =>
+    `<span class="card-star${i <= valoracio ? '' : ' off'}" onclick="event.stopPropagation();valorar('${nomJs}',${i})" style="cursor:pointer">★</span>`
+  ).join('');
+}
+
 async function valorar(nom, nova) {
   const idx = receptes.findIndex(r => r['Nom de la recepta'] === nom);
   if (idx === -1) return;
@@ -4167,10 +4203,14 @@ async function valorar(nom, nova) {
   const nomId = nom.replace(/[^a-zA-Z0-9]/g, '_');
   const starsEl = document.querySelector(`#card-${nomId} .card-stars`);
   if (starsEl) {
-    starsEl.innerHTML = [1,2,3,4,5].map(i =>
-      `<span class="card-star${i <= valoracio ? '' : ' off'}" onclick="event.stopPropagation();valorar('${nom.replace(/'/g,"\\'").replace(/"/g,"&quot;")}',${i})" style="cursor:pointer">★</span>`
-    ).join('');
+    starsEl.innerHTML = starsInteractiusHTML(nom, valoracio);
     starsEl.setAttribute('aria-label', `Valoració: ${valoracio} de 5`);
+  }
+  // Si el panell de detall mostra aquesta recepta, sincronitzem també les seves estrelles
+  const detallStarsEl = document.getElementById('detall-stars');
+  if (detallStarsEl && detallStarsEl.dataset.nom === nom) {
+    detallStarsEl.innerHTML = starsInteractiusHTML(nom, valoracio);
+    detallStarsEl.setAttribute('aria-label', `Valoració: ${valoracio} de 5`);
   }
 
   const r = receptes[idx];
@@ -4185,6 +4225,7 @@ async function valorar(nom, nova) {
     foto:         r['Foto']              || '',
     etiquetes:    r['Etiquetes']         || '',
     instruccions: r['Instruccions']      || '',
+    comentaris:   r['Comentaris']        || '',
     valoracio:    String(valoracio),
     racions:      r['Racions']           || '',
   });
@@ -4308,7 +4349,7 @@ async function pujarFotoRecepta(nomId, nom, input) {
     // Previsualització immediata (optimista)
     fotosLocals[nom] = dataUrl;
     const prev = document.getElementById('foto-preview-' + nomId);
-    if (prev) prev.innerHTML = `<img src="${dataUrl}" alt="Foto de ${nom.replace(/"/g,'&quot;')}">`;
+    if (prev) prev.innerHTML = `<img src="${dataUrl}" alt="Foto de ${escHTML(nom)}">`;
     const treure = document.getElementById('foto-treure-' + nomId);
     if (treure) treure.style.display = '';
     const cardImg = document.querySelector('#card-' + nomId + ' .card-img');
@@ -4357,7 +4398,7 @@ async function treureFotoRecepta(nomId, nom) {
 }
 
 // Preescalfament silenciós: desperta el servidor d'Apps Script en segon pla
-// perquè quan l'usuari canviï a mode "fora de casa" ja estigui actiu
+// perquè ja estigui actiu quan es faci la primera petició de debò
 if (SHEETS_URL) fetch(SHEETS_URL).catch(() => {});
 
 // Carrega inicial: primer la còpia local (instantània), després les dades fresques
@@ -4451,7 +4492,7 @@ function detectarCategoriaScan(nom, catDefecte) {
 function catOptions(seleccionada) {
   return ['', ...CAT_OPCIONS, '__nova__'].map(c => {
     if (c === '__nova__') return `<option value="__nova__">+ Nova categoria…</option>`;
-    return `<option value="${c}" ${c === seleccionada ? 'selected' : ''}>${c || '— Sense categoria —'}</option>`;
+    return `<option value="${escHTML(c)}" ${c === seleccionada ? 'selected' : ''}>${escHTML(c) || '— Sense categoria —'}</option>`;
   }).join('');
 }
 
@@ -4518,18 +4559,18 @@ function renderItem(item) {
   const div = document.createElement('div');
   div.className = 'targeta'; div.id = `targeta-${idx}`;
   const previewHTML = tipus === 'imatge'
-    ? `<img class="targeta-preview" src="${item.objectURL}" alt="${file.name}">`
+    ? `<img class="targeta-preview" src="${item.objectURL}" alt="${escHTML(file.name)}">`
     : `<div class="targeta-icona">${iconaTipus(tipus)}</div>`;
   div.innerHTML = `
     <div class="targeta-top">
       ${previewHTML}
       <div class="targeta-info">
-        <div class="targeta-nom">${file.name}</div>
+        <div class="targeta-nom">${escHTML(file.name)}</div>
         <div class="targeta-estat" id="estat-${idx}"></div>
         <span class="badge pendent" id="badge-${idx}">Pendent</span>
       </div>
       <div class="targeta-accions">
-        ${(item.etiqueta || etiquetaTipus(tipus)) ? `<span style="font-size:0.7rem;color:var(--text-muted);font-weight:500">${item.etiqueta || etiquetaTipus(tipus)}</span>` : ''}
+        ${(item.etiqueta || etiquetaTipus(tipus)) ? `<span style="font-size:0.7rem;color:var(--text-muted);font-weight:500">${escHTML(item.etiqueta || etiquetaTipus(tipus))}</span>` : ''}
         <button class="btn-eliminar" onclick="eliminarItem(${idx})">no, aquesta no!</button>
       </div>
     </div>
@@ -4756,17 +4797,33 @@ function normalitzarFont(font) {
 
 function detectarFont(lines, fontDefecte) {
   const zona = lines.slice(0, 3).join(' ');
+
+  // ── Dreceres personals (llibres escanejats sovint) ──
   if (/\bPUL\b|\bP\.U\.L\.?\b|\bP U L\b|\bPul\b|pick.?up.?limes/i.test(zona)) return 'Pick Up Limes';
-  const senseTitol = lines.slice(1, 3).join(' ');
-  if (/\bDE\b/.test(senseTitol) || /\bDeliciously\b/i.test(zona)) return 'Deliciously Ella';
+  // "Deliciously Ella": només si hi ha una línia que sigui EXACTAMENT les inicials
+  // ("DE" / "D.E.", el logotip escanejat) o el nom sencer. Mai la preposició "de"
+  // dins d'un títol ("PASTÍS DE POMA" ja no salta).
+  const teLiniaDE = lines.slice(0, 4).some(l => /^D\.?\s?E\.?$/.test(l.trim()));
+  if (teLiniaDE || /deliciously/i.test(zona)) return 'Deliciously Ella';
+
+  // ── Autoria genèrica: una línia curta (1-3 paraules) entre el títol i els ingredients ──
   const idxIng = lines.findIndex((l, i) => i > 0 && /^ingredients/i.test(l.trim()));
-  const fi     = idxIng > 1 ? idxIng : Math.min(4, lines.length);
+  const fi = idxIng >= 1 ? idxIng : Math.min(4, lines.length);
   const zonaAutoria = lines.slice(1, fi);
-  const reMetadades = /\b(racions?|minuts?|hores?|temps|porcions?|serves?)\b/i;
+  const reMetadades = /\b(racions?|minuts?|hores?|temps|porcions?|persones?|serves?|comensals?)\b/i;
+  const reCapcalera = /^(ingredients?|ingredientes|preparaci[óo]n?|elaboraci[óo]n?|instruccions?|instrucciones|m[èe]tode|m[ée]todo|passos?|pasos?|steps?)\b/i;
   const candidats = zonaAutoria.filter(l => {
-    if (reMetadades.test(l)) return false;
-    if (l.length < 3 || l.length > 60) return false;
-    return /[A-ZÀÁÂÃÄÇÈÉÊËÌÍÎÏÒÓÔÙÚÛÜ]/.test(l);
+    const t = l.trim();
+    if (t.length < 3 || t.length > 60) return false;
+    if (reMetadades.test(t)) return false;                 // "4 racions", "20 minuts"…
+    if (reCapcalera.test(t) || t.endsWith(':')) return false; // capçaleres de secció
+    if (/^\d/.test(t)) return false;                       // quantitats ("500 g de…")
+    const paraules = t.split(/\s+/);
+    if (paraules.length > 3) return false;                 // la font són 1-3 paraules
+    if (paraules.some(p => esVerbCuina(p))) return false;  // no és una instrucció
+    // Diverses paraules totes en majúscules = continuació del títol, no una font
+    if (paraules.length > 1 && t === t.toUpperCase() && /[A-ZÀ-Ú]/.test(t)) return false;
+    return true;
   });
   if (candidats.length > 0) {
     const autoria = candidats[0].trim();
@@ -5049,8 +5106,8 @@ async function desarRecepta(idx) {
   form.innerHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:0.25rem 0">
       <div style="display:flex;flex-direction:column;gap:0.3rem">
-        <div style="font-family:'Bricolage Grotesque',sans-serif;font-size:1rem;font-weight:400;color:var(--text)">${recepta.nom || '—'}</div>
-        <div style="font-size:0.78rem;color:var(--text-muted)">${recepta.categoria || '—'}</div>
+        <div style="font-family:'Bricolage Grotesque',sans-serif;font-size:1rem;font-weight:400;color:var(--text)">${escHTML(recepta.nom) || '—'}</div>
+        <div style="font-size:0.78rem;color:var(--text-muted)">${escHTML(recepta.categoria) || '—'}</div>
       </div>
       <div style="flex-shrink:0;background:#1a4a22;color:#6fcf97;font-size:0.78rem;font-weight:500;padding:0.45rem 1rem;border-radius:8px;border:1px solid #2d6b35">✓ Desat!</div>
     </div>`;
@@ -5316,7 +5373,7 @@ function toggleFormManual() {
     const catActual = sel.value;
     sel.innerHTML = ['', ...CAT_OPCIONS, '__nova__'].map(c => {
       if (c === '__nova__') return '<option value="__nova__">+ Nova categoria…</option>';
-      return '<option value="' + c + '"' + (c === catActual ? ' selected' : '') + '>' + (c || '— Sense categoria —') + '</option>';
+      return '<option value="' + escHTML(c) + '"' + (c === catActual ? ' selected' : '') + '>' + (escHTML(c) || '— Sense categoria —') + '</option>';
     }).join('');
     sel.value = catActual;
     document.getElementById('manual-nom').focus();
@@ -5585,34 +5642,34 @@ function renderIdea(it) {
     ? `<div class="card-section">
          <div class="card-section-label">Etiquetes</div>
          <div class="card-etiquetes">
-           ${etiquetes.split(',').map(e => `<span class="filtre-etiqueta">${netejarEtiqueta(e)}</span>`).join('')}
+           ${etiquetes.split(',').map(e => `<span class="filtre-etiqueta">${escHTML(netejarEtiqueta(e))}</span>`).join('')}
          </div>
        </div>`
     : '';
 
   const comentariHTML = comentari
     ? `<div class="card-section-label">Comentari</div>
-       <p class="idea-comentari-text">${comentari.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</p>`
+       <p class="idea-comentari-text">${escHTML(comentari)}</p>`
     : '<p class="idea-comentari-text" style="color:var(--text-muted)">Sense detalls. Pots editar aquesta idea per afegir-ne.</p>';
 
   const linkHTML = recepta
     ? `<div class="card-section">
          <div class="card-section-label">Recepta enllaçada</div>
          <button class="idea-link-recepta" onclick="event.stopPropagation(); obrirReceptaPerNom('${recepta.replace(/'/g,"\\'").replace(/"/g,'&quot;')}')">
-           <i class="ti ti-arrow-right" aria-hidden="true"></i> ${recepta}
+           <i class="ti ti-arrow-right" aria-hidden="true"></i> ${escHTML(recepta)}
          </button>
        </div>`
     : '';
 
   const receptaSelHTML = recepta
-    ? `<input type="text" id="idea-recepta-cerca-${titolId}" autocomplete="off" value="${recepta.replace(/"/g,'&quot;')}"
+    ? `<input type="text" id="idea-recepta-cerca-${titolId}" autocomplete="off" value="${escHTML(recepta)}"
          oninput="autocompleteRecepta('-${titolId}')" onfocus="autocompleteRecepta('-${titolId}')" onblur="amagarAutocomplete('-${titolId}')">`
     : `<input type="text" id="idea-recepta-cerca-${titolId}" autocomplete="off" placeholder="Comença a escriure el nom d'una recepta…"
          oninput="autocompleteRecepta('-${titolId}')" onfocus="autocompleteRecepta('-${titolId}')" onblur="amagarAutocomplete('-${titolId}')">`;
 
   return `<div class="card" id="card-idea-${titolId}">
     <div class="card-header" onclick="toggleIdea('${titolJs}')">
-      <span class="card-nom">${titol}</span>
+      <span class="card-nom">${escHTML(titol)}</span>
       <div class="card-dreta">
         ${recepta ? `<span class="idea-link-dot" title="Enllaçada a una recepta"><i class="ti ti-link" aria-hidden="true"></i></span>` : ''}
         <svg class="card-arrow ${obert ? 'obert' : ''}" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
@@ -5642,15 +5699,15 @@ function renderIdea(it) {
           <div class="card-edit-form" id="idea-edit-form-${titolId}" onclick="event.stopPropagation()" style="margin-top:12px;">
             <div class="card-edit-group full">
               <span class="card-edit-label">Títol</span>
-              <input type="text" id="idea-edit-titol-${titolId}" value="${titol.replace(/"/g,'&quot;')}">
+              <input type="text" id="idea-edit-titol-${titolId}" value="${escHTML(titol)}">
             </div>
             <div class="card-edit-group full">
               <span class="card-edit-label">Etiquetes</span>
-              <input type="text" id="idea-edit-etiquetes-${titolId}" value="${etiquetes.replace(/"/g,'&quot;')}" placeholder="ràpid, sense cuinar…">
+              <input type="text" id="idea-edit-etiquetes-${titolId}" value="${escHTML(etiquetes)}" placeholder="ràpid, sense cuinar…">
             </div>
             <div class="card-edit-group full">
               <span class="card-edit-label">Comentari</span>
-              <textarea id="idea-edit-comentari-${titolId}">${comentari.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</textarea>
+              <textarea id="idea-edit-comentari-${titolId}">${escHTML(comentari)}</textarea>
             </div>
             <div class="card-edit-group full">
               <span class="card-edit-label">Recepta enllaçada (opcional)</span>
@@ -5850,7 +5907,7 @@ function autocompleteRecepta(suffix) {
   }
   cont.innerHTML = matches.map(n => {
     const nJs = n.replace(/'/g,"\\'").replace(/"/g,'&quot;');
-    return `<div class="autocomplete-item" onmousedown="triarReceptaIdea('${suffix}','${nJs}')">${n}</div>`;
+    return `<div class="autocomplete-item" onmousedown="triarReceptaIdea('${suffix}','${nJs}')">${escHTML(n)}</div>`;
   }).join('');
   cont.classList.add('obert');
 }
