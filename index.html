@@ -17,7 +17,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500&family=DM+Sans:wght@300;400;500&family=Jost:wght@200;300;400&family=Poppins:wght@300;400;500&family=Syne:wght@300;400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500&family=Poppins:wght@300;400;500&family=Syne:wght@300;400;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
 <style>
   /* ══════════════════════════════════════
@@ -1374,7 +1374,7 @@
     --warn-text:   #E8C87A;
     background: #0B2027;
     color: var(--text);
-    font-family: 'DM Sans', 'Poppins', sans-serif;
+    font-family: 'Poppins', sans-serif;
   }
 
   #panell-scan .col-header {
@@ -1419,7 +1419,7 @@
   #panell-portada {
     background: var(--bg);
     color: var(--text);
-    font-family: 'Jost', sans-serif;
+    font-family: 'Poppins', sans-serif;
     min-height: 100vh;
     display: none;
     flex-direction: column;
@@ -1573,7 +1573,7 @@
   }
   .portada-receptadia-head i { font-size: 13px; color: var(--accent); }
   .portada-receptadia-head span {
-    font-family: 'Jost', sans-serif;
+    font-family: 'Poppins', sans-serif;
     font-size: 0.63rem; font-weight: 400;
     color: var(--accent);
     text-transform: uppercase; letter-spacing: 0.1em;
@@ -1584,14 +1584,14 @@
     color: var(--text); display: block; line-height: 1.3;
   }
   .portada-receptadia-meta {
-    font-family: 'Jost', sans-serif;
+    font-family: 'Poppins', sans-serif;
     font-size: 0.7rem; font-weight: 300;
     color: var(--text-muted); display: block; margin-top: 3px;
   }
   .portada-receptadia-meta .stars { color: var(--text-dim); }
   .portada-receptadia-loading {
     color: var(--text-muted);
-    font-family: 'Jost', sans-serif;
+    font-family: 'Poppins', sans-serif;
     font-size: 0.78rem; font-weight: 300;
     animation: pulsa 1.8s ease-in-out infinite;
   }
@@ -1616,7 +1616,7 @@
     font-size: 1.47rem; color: var(--text); display: block;
   }
   .portada-cerca-desc {
-    font-family: 'Jost', sans-serif;
+    font-family: 'Poppins', sans-serif;
     font-size: 0.78rem; font-weight: 300; color: var(--text-dim);
   }
   .portada-cerca-arrow { font-size: 16px; color: var(--accent2); }
@@ -2123,7 +2123,7 @@ if (localStorage.getItem('receptes_auth') === '1') {
               <input type="text" id="manual-url" placeholder="https://...">
             </div>
             <div class="form-group">
-              <label>Racions *</label>
+              <label>Racions</label>
               <input type="number" id="manual-racions" min="1" max="99" placeholder="p.ex. 4" style="width:100%">
             </div>
           </div>
@@ -2681,13 +2681,122 @@ function escHTML(s) {
   return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 
+// ── Pluralització d'unitats segons la quantitat escalada ──
+// Abreviatures i símbols que no varien mai (g, ml, kg…)
+const UNITATS_INVARIABLES = new Set(['g','gr','kg','mg','ml','cl','dl','l','u','cs','cn','ct','cc']);
+// Diccionari d'unitats de cuina habituals (català + castellà); les regles
+// generals de sota cobreixen la resta de casos en català
+const UNITATS_PLURALS = {
+  llauna:'llaunes', tassa:'tasses', cullerada:'cullerades', culleradeta:'culleradetes',
+  cullereta:'culleretes', got:'gots', gotet:'gotets', pot:'pots', paquet:'paquets',
+  sobre:'sobres', llesca:'llesques', rodanxa:'rodanxes', tros:'trossos', gra:'grans',
+  dent:'dents', branca:'branques', branqueta:'branquetes', fulla:'fulles', full:'fulls',
+  manat:'manats', manoll:'manolls', pessic:'pessics', grapat:'grapats', raig:'raigs',
+  unça:'unces', litre:'litres', quilo:'quilos', gram:'grams', tall:'talls', filet:'filets',
+  peça:'peces', unitat:'unitats', llenca:'llenques', porció:'porcions', ració:'racions',
+  làmina:'làmines', bola:'boles', cabeça:'cabeces', pastilla:'pastilles', bossa:'bosses',
+  ampolla:'ampolles', terrina:'terrines', pols:'polsos', pizca:'pizcas',
+  taza:'tazas', cucharada:'cucharadas', cucharadita:'cucharaditas', vaso:'vasos',
+  diente:'dientes', hoja:'hojas', rodaja:'rodajas', trozo:'trozos', lata:'latas',
+  bote:'botes', paquete:'paquetes', ramita:'ramitas', loncha:'lonchas', rebanada:'rebanadas',
+};
+const UNITATS_SINGULARS = Object.fromEntries(
+  Object.entries(UNITATS_PLURALS).map(([sg, pl]) => [pl, sg])
+);
+
+// Noms d'ingredients comptables: quan un ingredient no té unitat («2 llimones»),
+// la primera paraula del nom es pluralitza o singularitza en escalar.
+// Només s'apliquen paraules d'aquesta llista (per no tocar noms complexos).
+const NOMS_COMPTABLES_PLURALS = {
+  llimona:'llimones', remolatxa:'remolatxes', poma:'pomes', pastilla:'pastilles',
+  moniato:'moniatos', ceba:'cebes',
+};
+const NOMS_COMPTABLES_SINGULARS = Object.fromEntries(
+  Object.entries(NOMS_COMPTABLES_PLURALS).map(([sg, pl]) => [pl, sg])
+);
+
+// Ajusta la primera paraula del nom d'un ingredient sense unitat segons la quantitat,
+// i fa concordar els adjectius femenins que la segueixen («llimona ratllada» → «llimones ratllades»).
+// S'atura en preposicions i partícules («ceba de Figueres» → «cebes de Figueres»).
+const PARTICULES_NO_PLURAL = new Set(['de', "d'", 'a', 'la', 'una', 'amb', 'per', 'en', 'i', 'o', 'sense', 'extra']);
+function nomSegonsQuantitat(nomIng, q) {
+  if (!nomIng || q === null || q === undefined) return nomIng;
+  const paraules = nomIng.split(/\s+/);
+  const primera = paraules[0].toLowerCase();
+  const esConeguda =
+    NOMS_COMPTABLES_PLURALS[primera] || NOMS_COMPTABLES_SINGULARS[primera] ||
+    UNITATS_PLURALS[primera] || UNITATS_SINGULARS[primera];
+  if (!esConeguda) return nomIng;
+  if (q > 1) {
+    paraules[0] = pluralitzaParaula(paraules[0]);
+    // Concordança: adjectius femenins singulars que segueixen (acabats en -a)
+    for (let i = 1; i < paraules.length; i++) {
+      const lw = paraules[i].toLowerCase();
+      if (PARTICULES_NO_PLURAL.has(lw) || !/a$/.test(lw)) break;
+      paraules[i] = pluralitzaParaula(paraules[i]);
+    }
+  } else {
+    paraules[0] = singularitzaParaula(paraules[0]);
+    // Concordança inversa: adjectius femenins plurals que segueixen (acabats en -es)
+    for (let i = 1; i < paraules.length; i++) {
+      const lw = paraules[i].toLowerCase();
+      if (PARTICULES_NO_PLURAL.has(lw) || !/es$/.test(lw)) break;
+      paraules[i] = singularitzaParaula(paraules[i]);
+    }
+  }
+  return paraules.join(' ');
+}
+
+function pluralitzaParaula(w) {
+  const lw = w.toLowerCase();
+  if (UNITATS_PLURALS[lw])          return UNITATS_PLURALS[lw];
+  if (NOMS_COMPTABLES_PLURALS[lw])  return NOMS_COMPTABLES_PLURALS[lw];
+  if (UNITATS_SINGULARS[lw] || NOMS_COMPTABLES_SINGULARS[lw]) return w; // ja és plural
+  // Regles generals del català
+  if (/qua$/.test(lw)) return w.slice(0, -3) + 'qües';
+  if (/gua$/.test(lw)) return w.slice(0, -3) + 'gües';
+  if (/ca$/.test(lw))  return w.slice(0, -2) + 'ques';
+  if (/ça$/.test(lw))  return w.slice(0, -2) + 'ces';
+  if (/ja$/.test(lw))  return w.slice(0, -2) + 'ges';
+  if (/a$/.test(lw))   return w.slice(0, -1) + 'es';
+  if (/[çsxz]$/.test(lw)) return w + 'os';
+  return w + 's';
+}
+
+function singularitzaParaula(w) {
+  const lw = w.toLowerCase();
+  if (UNITATS_SINGULARS[lw])          return UNITATS_SINGULARS[lw];
+  if (NOMS_COMPTABLES_SINGULARS[lw])  return NOMS_COMPTABLES_SINGULARS[lw];
+  if (UNITATS_PLURALS[lw] || NOMS_COMPTABLES_PLURALS[lw]) return w; // ja és singular
+  if (/qües$/.test(lw)) return w.slice(0, -4) + 'qua';
+  if (/gües$/.test(lw)) return w.slice(0, -4) + 'gua';
+  if (/ques$/.test(lw)) return w.slice(0, -4) + 'ca';
+  if (/ces$/.test(lw))  return w.slice(0, -3) + 'ça';
+  if (/ges$/.test(lw))  return w.slice(0, -3) + 'ja';
+  if (/(sos|xos|ços)$/.test(lw)) return w.slice(0, -2);
+  if (/es$/.test(lw))   return w.slice(0, -2) + 'a';
+  if (/s$/.test(lw))    return w.slice(0, -1);
+  return w;
+}
+
+// Retorna la unitat en singular o plural segons la quantitat (q > 1 → plural).
+// Les abreviatures (g, ml…) i les unitats de ≤2 lletres es deixen tal qual.
+function unitatSegonsQuantitat(unitat, q) {
+  if (!unitat || q === null || q === undefined) return unitat;
+  const neta = unitat.trim();
+  if (neta.length <= 2 || UNITATS_INVARIABLES.has(neta.toLowerCase())) return unitat;
+  return neta.split(/\s+/)
+    .map(w => (q > 1 ? pluralitzaParaula(w) : singularitzaParaula(w)))
+    .join(' ');
+}
+
 function renderScaledIngredient(ing, factor) {
   if (ing.q === null) return escHTML(ing.n);
   const scaled = ing.q * factor;
-  const qStr = formatQuantity(scaled); // pot contenir HTML (<span class="frac">)
+  const qStr = formatQuantity(scaled);
   const parts = [qStr];
-  if (ing.u) parts.push(escHTML(ing.u));
-  if (ing.n) parts.push(escHTML(ing.n));
+  if (ing.u) parts.push(escHTML(unitatSegonsQuantitat(ing.u, scaled)));
+  if (ing.n) parts.push(escHTML(ing.u ? ing.n : nomSegonsQuantitat(ing.n, scaled)));
   return parts.join(' ');
 }
 
@@ -4603,6 +4712,12 @@ function renderItem(item) {
           <input type="text" id="etiquetes-${idx}" placeholder="sopar ràpid, meal prep…">
         </div>
       </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Racions</label>
+          <input type="number" id="racions-${idx}" min="1" max="99" placeholder="p.ex. 4" style="max-width:160px">
+        </div>
+      </div>
       <button class="btn-desar" id="btn-desar-${idx}" onclick="desarRecepta(${idx})">
         Desar al Receptari
       </button>
@@ -4696,6 +4811,7 @@ async function processarImatge(item, servidorOk) {
   document.getElementById(`ing-${idx}`).value  = dades.ingredients || '';
   document.getElementById(`instruccions-${idx}`).value = dades.instruccions || '';
   document.getElementById(`font-${idx}`).value = fontFinal;
+  document.getElementById(`racions-${idx}`).value = dades.racions || '';
   const catDef = document.getElementById('catDefecte').value;
   const selCat = document.getElementById(`cat-${idx}`);
   const nomImg = document.getElementById(`nom-${idx}`).value;
@@ -4738,6 +4854,7 @@ async function processarImatgeDrive(item) {
   document.getElementById(`ing-${idx}`).value  = recepta.ingredients || '';
   document.getElementById(`instruccions-${idx}`).value = recepta.instruccions || '';
   document.getElementById(`font-${idx}`).value = recepta.font || '';
+  document.getElementById(`racions-${idx}`).value = recepta.racions || '';
   item.recepta = recepta; item.status = 'fet';
   setBadge(idx, 'fet', '✓ Escannejat');
   setEstat(idx, 'Revisa i desa al receptari');
@@ -4761,6 +4878,7 @@ async function processarDocument(item) {
   document.getElementById(`ing-${idx}`).value  = recepta.ingredients || '';
   document.getElementById(`instruccions-${idx}`).value = recepta.instruccions || '';
   document.getElementById(`font-${idx}`).value = recepta.font || '';
+  document.getElementById(`racions-${idx}`).value = recepta.racions || '';
   item.recepta = recepta; item.status = 'fet';
   setBadge(idx, 'fet', '✓ Fet');
   setEstat(idx, 'Revisa i desa al receptari');
@@ -5058,8 +5176,14 @@ async function desarRecepta(idx) {
   const ingParsedScan = parseAllIngredients(ingRawScan);
   const ingJSONScan = ingParsedScan.length ? serializeIngredients(ingParsedScan) : ingRawScan;
 
-  // Racions detectades per l'analitzador (si n'hi havia a la foto/document)
-  const racionsScan = items[idx]?.recepta?.racions || '';
+  // Racions: llegim del camp editable (opcional, però ha de ser vàlid si té valor)
+  const racionsEl = document.getElementById(`racions-${idx}`);
+  const racionsScan = (racionsEl?.value || '').trim();
+  if (racionsScan && (!parseInt(racionsScan) || parseInt(racionsScan) < 1)) {
+    mostrarToast('El número de racions no és vàlid');
+    racionsEl.focus();
+    return;
+  }
 
   const recepta = {
     nom:          document.getElementById(`nom-${idx}`).value.trim(),
@@ -5125,6 +5249,7 @@ btnExportar.addEventListener('click', () => {
       const fontEl        = document.getElementById(`font-${it.idx}`);
       const etiquetesEl   = document.getElementById(`etiquetes-${it.idx}`);
       const instruccionsEl = document.getElementById(`instruccions-${it.idx}`);
+      const racionsElExp   = document.getElementById(`racions-${it.idx}`);
       return {
         nom:          nomEl          ? nomEl.value.trim()          : it.recepta.nom,
         categoria:    catEl          ? catEl.value                 : it.recepta.categoria,
@@ -5135,6 +5260,7 @@ btnExportar.addEventListener('click', () => {
         etiquetes:    etiquetesEl    ? normalitzarEtiquetes(etiquetesEl.value) : it.recepta.etiquetes || '',
         instruccions: instruccionsEl ? instruccionsEl.value.trim() : it.recepta.instruccions || '',
         valoracio:    '',
+        racions:      racionsElExp   ? racionsElExp.value.trim()   : it.recepta.racions || '',
       };
     });
   if (!llista.length) return;
@@ -5343,6 +5469,7 @@ function omplirDesDEnllac(item, dades, hostname) {
   document.getElementById(`ing-${idx}`).value          = recepta.ingredients || '';
   document.getElementById(`instruccions-${idx}`).value = recepta.instruccions || '';
   document.getElementById(`font-${idx}`).value         = recepta.font || '';
+  document.getElementById(`racions-${idx}`).value      = recepta.racions || '';
 
   const selCat = document.getElementById(`cat-${idx}`);
   const catSug = detectarCategoriaScan((recepta.nom || '').toLowerCase(), '');
@@ -5394,9 +5521,9 @@ async function desarManual() {
   }
 
   const racionsEl = document.getElementById('manual-racions');
-  const racions = parseInt(racionsEl?.value);
-  if (!racions || racions < 1) {
-    errEl.textContent = "Indica el número de racions d'aquesta recepta";
+  // Racions opcionals: només bloquegem si s'ha escrit un valor invàlid (0, negatiu…)
+  if (racionsEl?.value && (!parseInt(racionsEl.value) || parseInt(racionsEl.value) < 1)) {
+    errEl.textContent = "El número de racions no és vàlid";
     errEl.style.display = 'block';
     racionsEl.style.borderColor = '#E57373';
     racionsEl.focus();
@@ -5510,14 +5637,19 @@ function toggleDrawerFonts() {
   btn.classList.toggle('actiu', obert);
   if (obert) construirPillsFonts();
 }
+// Re-renderitzar la llista sencera a cada tecla és car; esperem 200ms
+// des de l'última pulsació i ho fem una sola vegada (debounce)
+let cercaTimer = null;
 function onCercaInput() {
   const val = document.getElementById('cerca').value;
   const btn = document.getElementById('btnClearCerca');
-  btn.classList.toggle('visible', val.length > 0);
-  aplicar();
+  btn.classList.toggle('visible', val.length > 0); // el botó ✕ respon a l'instant
+  clearTimeout(cercaTimer);
+  cercaTimer = setTimeout(aplicar, 200);
 }
 
 function netejarCerca() {
+  clearTimeout(cercaTimer); // cancel·la qualsevol re-renderitzat pendent del debounce
   const input = document.getElementById('cerca');
   input.value = '';
   document.getElementById('btnClearCerca').classList.remove('visible');
@@ -5760,12 +5892,15 @@ function toggleIdea(titol) {
 }
 
 // ── Cerca d'idees ──
+let cercaIdeesTimer = null;
 function onCercaIdeesInput() {
   const val = document.getElementById('cerca-idees').value;
   document.getElementById('btnClearCercaIdees').classList.toggle('visible', val.length > 0);
-  aplicarIdees();
+  clearTimeout(cercaIdeesTimer);
+  cercaIdeesTimer = setTimeout(aplicarIdees, 200);
 }
 function netejarCercaIdees() {
+  clearTimeout(cercaIdeesTimer);
   const input = document.getElementById('cerca-idees');
   input.value = '';
   document.getElementById('btnClearCercaIdees').classList.remove('visible');
